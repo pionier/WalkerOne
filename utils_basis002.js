@@ -56,7 +56,6 @@ fDWL.R4D.TriangleBuffer.prototype = {
 	// initialize
 	initialize: function( shader ){
 		"use strict";
-		var gl = this.gl;
 		this.itrLvdBuffer = new ArrayBuffer( this.vtxNum * this.vertexSizeInByte );
 		this.positionView = new Float32Array( this.itrLvdBuffer );
 		this.colorView = new Uint8Array( this.itrLvdBuffer );
@@ -68,12 +67,12 @@ fDWL.R4D.TriangleBuffer.prototype = {
 	
 	// 三角形を描画バッファに登録
 	setTriangle: function( vtx0, vtx1, vtx2  ){
-			"use strict";
-		let pV = this.positionView,
-			cV = this.colorView,
-			pOffs = this.positionOffsetInFloats,
-			cOffs = this.colorOffsetInBytes,
-			vtx = [ vtx0, vtx1, vtx2 ];
+		"use strict";
+		const	pV = this.positionView,
+				cV = this.colorView,
+				vtx = [ vtx0, vtx1, vtx2 ];
+		let pOffs = this.positionOffsetInFloats,
+			cOffs = this.colorOffsetInBytes;
 		
 		for( let cnt = 0; cnt < 3; ++cnt ){
 			
@@ -142,7 +141,7 @@ fDWL.R4D.Matrix4.prototype = {
 	//------------------------------------------------------------------
 	mul: function( rMtx ){
 		"use strict";
-		var clm = 0,
+		let clm = 0,
 			row = 0,
 			tmpMtx = [];
 		
@@ -176,8 +175,8 @@ fDWL.R4D.Matrix4.prototype = {
 	//------------------------------------------------------------------
 	makeRot: function( axis, angle ){
 		"use strict";
-		var sinX = Math.sin(angle),
-			cosX = Math.cos(angle);
+		const sinX = Math.sin(angle),
+			  cosX = Math.cos(angle);
 		
 		this.aa = [
 			1.0, 0.0, 0.0, 0.0,
@@ -226,7 +225,7 @@ fDWL.R4D.Matrix4.prototype = {
 	//------------------------------------------------------------------
 	mulVec:	function( x, y, z, h ){
 		"use strict";
-		var
+		const
 		xx = this.aa[ 0]*x + this.aa[ 1]*y + this.aa[ 2]*z + this.aa[ 3]*h,
 		yy = this.aa[ 4]*x + this.aa[ 5]*y + this.aa[ 6]*z + this.aa[ 7]*h,
 		zz = this.aa[ 8]*x + this.aa[ 9]*y + this.aa[10]*z + this.aa[11]*h,
@@ -248,7 +247,7 @@ fDWL.R4D.Matrix4.prototype = {
 //==================================================================
 fDWL.R4D.affine4D = function( src, rotate, offs, scale ){
 		"use strict";
-	var mx4Scale = new fDWL.R4D.Matrix4(),
+	let mx4Scale = new fDWL.R4D.Matrix4(),
 		mx4Rotate,
 		mx4Rots = [
 			new fDWL.R4D.Matrix4(),
@@ -286,7 +285,6 @@ fDWL.R4D.affine4D = function( src, rotate, offs, scale ){
 	
 	return dst;
 };
-/**/
 
 //==================================================================
 // inProd4D
@@ -294,7 +292,7 @@ fDWL.R4D.affine4D = function( src, rotate, offs, scale ){
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 fDWL.inProd4D = function( vec0, vec1 ){
-		"use strict";
+	"use strict";
 	return ( vec0[0]*vec1[0] + vec0[1]*vec1[1] + vec0[2]*vec1[2] + vec0[3]*vec1[3] );
 }
 
@@ -308,20 +306,18 @@ fDWL.inProd4D = function( vec0, vec1 ){
 //
 //==================================================================
 fDWL.R4D.calcNormal4D = function( vertice, center ){
-		"use strict";
-	var nor4D = [ 0,0,0,0 ],
+	"use strict";
+	let nor4D = [ 0,0,0,0 ],
 		v0 = [ vertice[ 4]-vertice[0], vertice[ 5]-vertice[1], vertice[ 6]-vertice[2], vertice[ 7]-vertice[3] ],
 		v1 = [ vertice[ 8]-vertice[0], vertice[ 9]-vertice[1], vertice[10]-vertice[2], vertice[11]-vertice[3] ],
 		v2 = [ vertice[12]-vertice[0], vertice[13]-vertice[1], vertice[14]-vertice[2], vertice[15]-vertice[3] ],
 		vec0 = [], vec1 = [], vec2 = [],
 		vc0  = [], vc1  = [], vc2  = [],
 		isEnd = false,
-		sign = 0,
-		tmp0, tmp1, tmp2,
-		idx = 0;
+		sign = 0;
 	
 	// 前処理：体に垂直なケースを取り除く
-	for( idx = 0; idx < 4; ++idx ){
+	for( let idx = 0; idx < 4; ++idx ){
 		if(( v0[idx] == 0 )&&( v1[idx] == 0 )&&( v2[idx] == 0 )){
 			nor4D[idx] = 1.0;
 			isEnd = true;
@@ -331,7 +327,7 @@ fDWL.R4D.calcNormal4D = function( vertice, center ){
 	// 本処理：ガウス・ジョルダン法
 	while( !isEnd ){
 		// X座標のピボットを得る
-		tmp0 = Math.abs( v0[0] ), tmp1 = Math.abs( v1[0] ), tmp2 = Math.abs( v2[0] );
+		const tmp0 = Math.abs( v0[0] ), tmp1 = Math.abs( v1[0] ), tmp2 = Math.abs( v2[0] );
 		// ベクトルの並び替え
 		if( tmp0 >= tmp1 ){
 			if( tmp1 >= tmp2 ){
@@ -436,27 +432,24 @@ fDWL.R4D.calcNormal4D = function( vertice, center ){
 //==================================================================
 fDWL.calcAve = function( elemNum, itemNum, vertice, vertIdx ){
 		"use strict";
-	var idx = 0,
-		ii = 0,
-		jj = 0,
-		aveArray = [];
+	let aveArray = [];
 	
 	// 要素数分の配列要素を準備
-	for( ii = 0; ii < elemNum; ++ii ){
+	for( let ii = 0; ii < elemNum; ++ii ){
 		aveArray.push( 0 );
 	}
 	// 各アイテムを要素ごとに加算
-	for( ii = 0; ii < itemNum; ++ii ){
+	let idx = 0;
+	for( let ii = 0; ii < itemNum; ++ii ){
 		idx = vertIdx[ii]*elemNum;
-		for( jj = 0; jj < elemNum; ++jj ){
+		for( let jj = 0; jj < elemNum; ++jj ){
 			aveArray[jj] += vertice[idx+jj];
 		}
 	}
 	// アイテム数で割って平均を出す
-	for( ii = 0; ii < elemNum; ++ii ){
+	for( let ii = 0; ii < elemNum; ++ii ){
 		aveArray[ii] /= itemNum;
 	}
-	
 	return aveArray;
 }
 
@@ -471,12 +464,12 @@ fDWL.calcAve = function( elemNum, itemNum, vertice, vertIdx ){
 //==================================================================
 fDWL.R4D.Pylams4D = function( gl, prg, pos, rotate, scale, vertex, color, center, index, chrnIdx, centIdx, colorIdx, offs, rot ){
 		"use strict";
-	var norms = [],
+	let norms = [],
 		vert = [],
 		center0 = [],
 		vertIdx = [],
-		vId = 0,
-		idx = 0;
+		vId = 0;
+
 	this.gl = gl;
 	this.prg = prg;
 	this.pos = pos;					// [ x, y, z, h ]
@@ -486,36 +479,25 @@ fDWL.R4D.Pylams4D = function( gl, prg, pos, rotate, scale, vertex, color, center
 	
 	// ローカル変換
 	this.vertex = fDWL.R4D.affine4D( vertex, rot, offs, scale );
-	
-//	this.vertexNormal = [];			// 頂点の法線
-	// 仮
-//	this.center = [ 0,0,0,0 ];
 	this.center = fDWL.R4D.affine4D( center, rot, offs, scale );
 	this.centerIndex = centIdx;
 	
 	// 中心配列の生成
 	this.centers = [];
-	for( idx = 0; idx < chrnIdx.length; idx += 5 ){
+	for( let idx = 0; idx < chrnIdx.length; idx += 5 ){
 		vertIdx = [ chrnIdx[idx], chrnIdx[idx+1], chrnIdx[idx+2], chrnIdx[idx+3], chrnIdx[idx+4] ];
-//		center = fDWL.calcAve( 4, 1, vertex, vertIdx );
 		center = fDWL.calcAve( 4, 5, vertex, vertIdx );
 		this.centers.push( center[0], center[1], center[2], center[3] );
 	}
 	// 体の法線の算出
 	this.fieldNormal = [];
-	for( idx = 0; idx < index.length; idx += 4 ){
+	for( let idx = 0; idx < index.length; idx += 4 ){
 		vId = idx*4;
 		vert = [
 			vertex[index[vId  ]*4], vertex[index[vId  ]*4+1], vertex[index[vId  ]*4+2], vertex[index[vId  ]*4+3],
 			vertex[index[vId+1]*4], vertex[index[vId+1]*4+1], vertex[index[vId+1]*4+2], vertex[index[vId+1]*4+3],
 			vertex[index[vId+2]*4], vertex[index[vId+2]*4+1], vertex[index[vId+2]*4+2], vertex[index[vId+2]*4+3],
 			vertex[index[vId+3]*4], vertex[index[vId+3]*4+1], vertex[index[vId+3]*4+2], vertex[index[vId+3]*4+3]
-/*
-			vertex[index[vId  ]], vertex[index[vId  ]+1], vertex[index[vId  ]+2], vertex[index[vId  ]+3],
-			vertex[index[vId+1]], vertex[index[vId+1]+1], vertex[index[vId+1]+2], vertex[index[vId+1]+3],
-			vertex[index[vId+2]], vertex[index[vId+2]+1], vertex[index[vId+2]+2], vertex[index[vId+2]+3],
-			vertex[index[vId+3]], vertex[index[vId+3]+1], vertex[index[vId+3]+2], vertex[index[vId+3]+3]
-*/
 		];
 		
 		vertIdx = centIdx[Math.floor(idx/4)]*4;
@@ -545,10 +527,9 @@ fDWL.R4D.Pylams4D.prototype = {
 	// 三角錐切断・三角形生成
 	dividePylams: function( hPos ){
 		"use strict";
-		var cnt = 0,
+		let cnt = 0,
 			cutType = 0,
 			iPylamid = [ 0, 0, 0, 0 ],
-			plmCnt = 0,
 			maxPlmCnt = 0,
 			fldCnt = 0,
 			norVec,
@@ -557,7 +538,7 @@ fDWL.R4D.Pylams4D.prototype = {
 			pylamArray = this.index;
 
 		maxPlmCnt = Math.floor( pylamArray.length/4 );
-		for( plmCnt = 0; plmCnt < maxPlmCnt; plmCnt++ ){	// 三角錐ごとにチェック
+		for( let plmCnt = 0; plmCnt < maxPlmCnt; plmCnt++ ){	// 三角錐ごとにチェック
 			cnt = plmCnt*4;
 			
 			fldCnt = Math.floor( plmCnt/5 );
@@ -607,8 +588,7 @@ fDWL.R4D.Pylams4D.prototype = {
 	// この規則を三角形構成時に利用する
 	getCutType: function( vtx, iPylam, hPos ){
 		"use strict";
-		var cutType = 0,
-			cnt = 0,
+		let cutType = 0,
 			hVal = 0.0,
 			minusBuf = [0,0,0,0],
 			plusBuf = [0,0,0,0],
@@ -624,7 +604,7 @@ fDWL.R4D.Pylams4D.prototype = {
 			iVtx2 = 0,
 			iVtx3 = 0;
 		// ゼロ／正／負を調べてそれぞれのバッファに代入
-		for( cnt = 0; cnt < 4; ++cnt ){
+		for( let cnt = 0; cnt < 4; ++cnt ){
 			hVal = vtx[ iPylam[cnt] ][3];
 			if( hVal < hPos ){
 				minusNum++;
@@ -729,14 +709,14 @@ fDWL.R4D.Pylams4D.prototype = {
 	// ３頂点を算出
 	makeTriangle3Vtx: function( hPos, vtx, cutType, nrm4, clrVec ){
 		"use strict";
-		var p0 = cutType[1],		// 4 is sizeof( vertex )
-			p1 = cutType[2],
-			p2 = cutType[3],
-			p3 = cutType[4],
-			rate01 = fDWL.getLerpRate( hPos, vtx[p0][3], vtx[p1][3] ),
-			rate02 = fDWL.getLerpRate( hPos, vtx[p0][3], vtx[p2][3] ),
-			rate03 = fDWL.getLerpRate( hPos, vtx[p0][3], vtx[p3][3] ),
-			lerpedCol = fDWL.lerpColor( 0,1,0,2,0,3, rate01, rate02, rate03, clrVec );
+		const	p0 = cutType[1],		// 4 is sizeof( vertex )
+				p1 = cutType[2],
+				p2 = cutType[3],
+				p3 = cutType[4],
+				rate01 = fDWL.getLerpRate( hPos, vtx[p0][3], vtx[p1][3] ),
+				rate02 = fDWL.getLerpRate( hPos, vtx[p0][3], vtx[p2][3] ),
+				rate03 = fDWL.getLerpRate( hPos, vtx[p0][3], vtx[p3][3] ),
+				lerpedCol = fDWL.lerpColor( 0,1,0,2,0,3, rate01, rate02, rate03, clrVec );
 		
 		this.setTriangle(
 			fDWL.lerp3(
@@ -761,15 +741,15 @@ fDWL.R4D.Pylams4D.prototype = {
 	// ４頂点を算出、２三角形を登録
 	makeTriangleDuo4Vtx: function( hPos, vtx, cutType, nrm4, clrVec ){
 		"use strict";
-		var p0 = cutType[1],		// 4 is sizeof( vertex )
+		const p0 = cutType[1],		// 4 is sizeof( vertex )
 			p1 = cutType[2],
 			p2 = cutType[3],
 			p3 = cutType[4],
 			rate02 = fDWL.getLerpRate( hPos, vtx[p0][3], vtx[p2][3] ),
 			rate03 = fDWL.getLerpRate( hPos, vtx[p0][3], vtx[p3][3] ),
 			rate12 = fDWL.getLerpRate( hPos, vtx[p1][3], vtx[p2][3] ),
-			rate13 = fDWL.getLerpRate( hPos, vtx[p1][3], vtx[p3][3] ),
-			lerpedCol;
+			rate13 = fDWL.getLerpRate( hPos, vtx[p1][3], vtx[p3][3] );
+		let lerpedCol;
 		
 		// 四辺形を対角線で分けて２つの三角形を作っているが、
 		// 一組の２三角形として(strip)描画したほうが望ましい
@@ -817,15 +797,14 @@ fDWL.R4D.Pylams4D.prototype = {
 	// 頂点の内１つが３Ｄ空間に包含：２点を算出
 	makeTriangle2Vtx: function( hPos, vtx, cutType, nrm4, clrVec ){
 		"use strict";
-		var p0 = cutType[1],		// 4 is sizeof( vertex )
-			p1 = cutType[2],
-			p2 = cutType[3],
-			p3 = cutType[4],
-			rate0 = fDWL.getLerpRate( hPos, vtx[p1][3], vtx[p2][3] ),
-			rate1 = fDWL.getLerpRate( hPos, vtx[p1][3], vtx[p3][3] ),
-			lerpedCol;
+		const	p0 = cutType[1],		// 4 is sizeof( vertex )
+				p1 = cutType[2],
+				p2 = cutType[3],
+				p3 = cutType[4],
+				rate0 = fDWL.getLerpRate( hPos, vtx[p1][3], vtx[p2][3] ),
+				rate1 = fDWL.getLerpRate( hPos, vtx[p1][3], vtx[p3][3] ),
+				lerpedCol = fDWL.lerpColor( 0,0,1,2,1,3, 1,rate0,rate1, clrVec );
 		
-		lerpedCol = fDWL.lerpColor( 0,0,1,2,1,3, 1,rate0,rate1, clrVec );
 		this.setTriangle(
 			[ vtx[p0][0], vtx[p0][1], vtx[p0][2] ],
 			fDWL.lerp3(
@@ -845,14 +824,13 @@ fDWL.R4D.Pylams4D.prototype = {
 	// 頂点の内２つが３Ｄ空間に包含：１点を算出
 	makeTriangle1Vtx: function( hPos, vtx, cutType, nrm4, clrVec ){
 		"use strict";
-		var p0 = cutType[1],		// 4 is sizeof( vertex )
-			p1 = cutType[2],
-			p2 = cutType[3],
-			p3 = cutType[4],
-			rate = fDWL.getLerpRate( hPos, vtx[p2][3], vtx[p3][3] ),
-			lerpedCol;
+		const p0 = cutType[1],		// 4 is sizeof( vertex )
+				p1 = cutType[2],
+				p2 = cutType[3],
+				p3 = cutType[4],
+				rate = fDWL.getLerpRate( hPos, vtx[p2][3], vtx[p3][3] ),
+				lerpedCol = fDWL.lerpColor( 0,0,1,1,2,3, 1,1,rate, clrVec );
 		
-		lerpedCol = fDWL.lerpColor( 0,0,1,1,2,3, 1,1,rate, clrVec );
 		this.setTriangle(
 			[ vtx[p0][0], vtx[p0][1], vtx[p0][2] ],
 			[ vtx[p1][0], vtx[p1][1], vtx[p1][2] ],
@@ -868,9 +846,9 @@ fDWL.R4D.Pylams4D.prototype = {
 	// 頂点の内３つが３Ｄ空間に包含されている
 	makeTriangle0Vtx: function( hPos, vtx, cutType, nrm4, clrVec ){
 		"use strict";
-		var p0 = cutType[1],		// 4 is sizeof( vertex )
-			p1 = cutType[2],
-			p2 = cutType[3];
+		const	p0 = cutType[1],		// 4 is sizeof( vertex )
+				p1 = cutType[2],
+				p2 = cutType[3];
 
 		this.setTriangle(
 			[ vtx[p0][0], vtx[p0][1], vtx[p0][2] ],
@@ -883,11 +861,11 @@ fDWL.R4D.Pylams4D.prototype = {
 	// 頂点の内４つが３Ｄ空間に包含：４つの三角形を登録
 	makeTriangleQuadra0Vtx: function( hPos, vtx, cutType, nrm4, clrVec ){
 		"use strict";
-		var p0 = cutType[1],		// 4 is sizeof( vertex )
-			p1 = cutType[2],
-			p2 = cutType[3],
-			p3 = cutType[4],
-			lerpedCol;
+		const	p0 = cutType[1],		// 4 is sizeof( vertex )
+				p1 = cutType[2],
+				p2 = cutType[3],
+				p3 = cutType[4];
+		let lerpedCol;
 
 		lerpedCol = [
 			clrVec[ 0], clrVec[ 1], clrVec[ 2], clrVec[ 3],
@@ -942,22 +920,19 @@ fDWL.R4D.Pylams4D.prototype = {
 	setTriangleFlat: function( v0, v1, v2, nrm4, clrVec ){
 		"use strict";
 		// 面の法線を求める
-		var vec0 = [ v0[0]-v1[0], v0[1]-v1[1], v0[2]-v1[2] ],
+		let vec0 = [ v0[0]-v1[0], v0[1]-v1[1], v0[2]-v1[2] ],
 			vec1 = [ v2[0]-v1[0], v2[1]-v1[1], v2[2]-v1[2] ],
 			nrm = fDWL.normalize3( fDWL.outProd( vec0, vec1 ) ),
-			det = 0,
 			vtx0 = [],
 			vtx1 = [],
-			vtx2 = [],
-			tmp = 0;
+			vtx2 = [];
 		
-/**/
 		// centerからの方向と比較、逆なら反転させる
 		var cVec = [
 			v0[0]-nrm4[0], v0[1]-nrm4[1], v0[2]-nrm4[2], 
 		];
 		cVec = fDWL.normalize3( cVec );
-		det = nrm[0]*cVec[0] + nrm[1]*cVec[1] + nrm[2]*cVec[2];
+		const det = nrm[0]*cVec[0] + nrm[1]*cVec[1] + nrm[2]*cVec[2];
 /*
 		// ４次法線との方向を確認、逆なら反転させる
 		nrm = fDWL.normalize3( nrm );
@@ -967,7 +942,7 @@ fDWL.R4D.Pylams4D.prototype = {
 			nrm[0] = -nrm[0];
 			nrm[1] = -nrm[1];
 			nrm[2] = -nrm[2];
-			tmp = v0[0];
+			let tmp = v0[0];
 			v0[0] = v1[0];
 			v1[0] = tmp;
 			tmp = v0[1];
@@ -988,13 +963,13 @@ fDWL.R4D.Pylams4D.prototype = {
 	// 三角形を描画バッファに登録( Gouraud Shading )
 	setTriangleGouraud: function( v0, v1, v2, center, colors ){
 		"use strict";
-		var vc0 = fDWL.normalize3( [ v0[0]-center[0], v0[1]-center[1], v0[2]-center[2] ] ),
-			vc1 = fDWL.normalize3( [ v1[0]-center[0], v1[1]-center[1], v1[2]-center[2] ] ),
-			vc2 = fDWL.normalize3( [ v2[0]-center[0], v2[1]-center[1], v2[2]-center[2] ] );
+		const	vc0 = fDWL.normalize3( [ v0[0]-center[0], v0[1]-center[1], v0[2]-center[2] ] ),
+				vc1 = fDWL.normalize3( [ v1[0]-center[0], v1[1]-center[1], v1[2]-center[2] ] ),
+				vc2 = fDWL.normalize3( [ v2[0]-center[0], v2[1]-center[1], v2[2]-center[2] ] );
 		
-		vtx0 = [ v0[0], v0[1], v0[2], vc0[0],vc0[1],vc0[2], colors[0],colors[1],colors[ 2],colors[ 3] ];
-		vtx1 = [ v1[0], v1[1], v1[2], vc1[0],vc1[1],vc1[2], colors[4],colors[5],colors[ 6],colors[ 7] ];
-		vtx2 = [ v2[0], v2[1], v2[2], vc2[0],vc2[1],vc2[2], colors[8],colors[9],colors[10],colors[11] ];
+		const vtx0 = [ v0[0], v0[1], v0[2], vc0[0],vc0[1],vc0[2], colors[0],colors[1],colors[ 2],colors[ 3] ];
+		const vtx1 = [ v1[0], v1[1], v1[2], vc1[0],vc1[1],vc1[2], colors[4],colors[5],colors[ 6],colors[ 7] ];
+		const vtx2 = [ v2[0], v2[1], v2[2], vc2[0],vc2[1],vc2[2], colors[8],colors[9],colors[10],colors[11] ];
 		
 		// 描画用三角バッファに詰め込む
 		this.triBuf.setTriangle( vtx0, vtx1, vtx2 );
@@ -1004,12 +979,11 @@ fDWL.R4D.Pylams4D.prototype = {
 	getNormalPlane: function( cnt ){
 		"use strict";
 		return this.workNrm[ Math.floor( cnt/5 ) ];
-//		return this.workNrm[ Math.floor( cnt/4 ) ];
 	},
 	// 頂点法線用中心点を取得
 	getNormalVertex: function( cnt ){
 		"use strict";
-		var centerIdx = this.centerIndex[cnt];
+		const centerIdx = this.centerIndex[cnt];
 		return [
 			this.workCenter[ centerIdx ][0],
 			this.workCenter[ centerIdx ][1],
@@ -1019,7 +993,7 @@ fDWL.R4D.Pylams4D.prototype = {
 	// 平面色を取得
 	getColorPlane: function( plmCnt ){
 		"use strict";
-		var clrCnt = this.colorIndex[plmCnt]*4;
+		const clrCnt = this.colorIndex[plmCnt]*4;
 		return [
 			this.color[ clrCnt ], this.color[ clrCnt+1 ], this.color[ clrCnt+2 ], this.color[ clrCnt+3 ],
 			this.color[ clrCnt ], this.color[ clrCnt+1 ], this.color[ clrCnt+2 ], this.color[ clrCnt+3 ],
@@ -1030,11 +1004,11 @@ fDWL.R4D.Pylams4D.prototype = {
 	// 頂点色を取得
 	getColorVertex: function( plmCnt ){
 		"use strict";
-		var vtxCnt = this.index[ plmCnt*4 ],
-			clrCnt0 = this.colorIndex[ this.index[ vtxCnt   ] ]*4,
-			clrCnt1 = this.colorIndex[ this.index[ vtxCnt+1 ] ]*4,
-			clrCnt2 = this.colorIndex[ this.index[ vtxCnt+2 ] ]*4,
-			clrCnt3 = this.colorIndex[ this.index[ vtxCnt+3 ] ]*4;
+		const	vtxCnt = this.index[ plmCnt*4 ],
+				clrCnt0 = this.colorIndex[ this.index[ vtxCnt   ] ]*4,
+				clrCnt1 = this.colorIndex[ this.index[ vtxCnt+1 ] ]*4,
+				clrCnt2 = this.colorIndex[ this.index[ vtxCnt+2 ] ]*4,
+				clrCnt3 = this.colorIndex[ this.index[ vtxCnt+3 ] ]*4;
 		
 		return [
 			this.color[clrCnt0], this.color[clrCnt0+1], this.color[clrCnt0+2], this.color[clrCnt0+3],
@@ -1047,7 +1021,7 @@ fDWL.R4D.Pylams4D.prototype = {
 	// ４Ｄ変換
 	transform: function(){
 		"use strict";
-		var mx4Scale = new fDWL.R4D.Matrix4(),
+		let mx4Scale = new fDWL.R4D.Matrix4(),
 			mx4Rots = [
 				new fDWL.R4D.Matrix4(),
 				new fDWL.R4D.Matrix4(),
@@ -1120,8 +1094,7 @@ fDWL.R4D.Pylams4D.prototype = {
 	// 頂点の法線を生成：初期化時のみ使用可能
 	makeVertexNormal: function(){
 		"use strict";
-		var idx = 0;
-		for( idx = 0; idx < 16; ++idx ){
+		for( let idx = 0; idx < 16; ++idx ){
 			this.vertexNormal[idx] = this.vertex[idx]/2;
 		}
 	},
@@ -1131,8 +1104,8 @@ fDWL.R4D.Pylams4D.prototype = {
 // Create VBO
 //------------------------------------------------------------------
 fDWL.WGL.createVbo = function( gl, data ){
-		"use strict";
-	var vbo = gl.createBuffer();
+	"use strict";
+	let vbo = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
 	gl.bindBuffer(gl.ARRAY_BUFFER, null);
@@ -1144,8 +1117,8 @@ fDWL.WGL.createVbo = function( gl, data ){
 // Create IBO
 //------------------------------------------------------------------
 fDWL.WGL.createIbo = function( gl, data ){
-		"use strict";
-	var ibo = gl.createBuffer();
+	"use strict";
+	let ibo = gl.createBuffer();
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Int16Array(data), gl.STATIC_DRAW);
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
@@ -1156,7 +1129,7 @@ fDWL.WGL.createIbo = function( gl, data ){
 // 座標変換行列計算
 //------------------------------------------------------------------
 fDWL.WGL.makeMatrix = function( pos, rot, scale, viewProjMtx, modelMtx, mvpMtx, invMtx ){
-		"use strict";
+	"use strict";
 	
 	mat4.identity( modelMtx );
 	// 回転
@@ -1177,7 +1150,7 @@ fDWL.WGL.makeMatrix = function( pos, rot, scale, viewProjMtx, modelMtx, mvpMtx, 
 // 外積を計算
 //------------------------------------------------------------------
 fDWL.outProd = function( vec0, vec1 ){
-		"use strict";
+	"use strict";
 	return [
 		vec0[1]*vec1[2] - vec0[2]*vec1[1],
 		vec0[2]*vec1[0] - vec0[0]*vec1[2],
@@ -1189,8 +1162,8 @@ fDWL.outProd = function( vec0, vec1 ){
 // 3Dベクトルの正規化
 //------------------------------------------------------------------
 fDWL.normalize3 = function( vec ){
-		"use strict";
-	var vSize = Math.sqrt( vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2] );
+	"use strict";
+	const vSize = Math.sqrt( vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2] );
 	if( vSize == 0 ){
 		return [ 0, 0, 0 ];
 	}else{
@@ -1202,7 +1175,7 @@ fDWL.normalize3 = function( vec ){
 // 3Dベクトルの線形補間
 //------------------------------------------------------------------
 fDWL.lerp3 = function( v0, v1, rate ){
-		"use strict";
+	"use strict";
 	return [
 		v0[0] + rate*( v1[0] - v0[0] ),
 		v0[1] + rate*( v1[1] - v0[1] ),
@@ -1214,7 +1187,7 @@ fDWL.lerp3 = function( v0, v1, rate ){
 // 線形補間
 //------------------------------------------------------------------
 fDWL.lerp1 = function( a, b, rate ){
-		"use strict";
+	"use strict";
 	return ( a + rate*( b - a ));
 };
 
@@ -1222,7 +1195,7 @@ fDWL.lerp1 = function( a, b, rate ){
 // 線形補間比率を算出
 //------------------------------------------------------------------
 fDWL.getLerpRate = function( pos, low, high ){
-		"use strict";
+	"use strict";
 	if( low === high ){
 		if( 0 === low ){
 			high = 1;
@@ -1238,13 +1211,13 @@ fDWL.getLerpRate = function( pos, low, high ){
 //------------------------------------------------------------------
 fDWL.lerpColor = function( idxA0,idxA1, idxB0,idxB1, idxC0,idxC1, rate0,rate1,rate2, clr ){
 		"use strict";
-	var lineCnt = 0,
-		idx0 = idxA0*4,
-		idx1 = idxA1*4,
-		idx2 = idxB0*4,
-		idx3 = idxB1*4,
-		idx4 = idxC0*4,
-		idx5 = idxC1*4;
+	const	lineCnt = 0,
+			idx0 = idxA0*4,
+			idx1 = idxA1*4,
+			idx2 = idxB0*4,
+			idx3 = idxB1*4,
+			idx4 = idxC0*4,
+			idx5 = idxC1*4;
 	
 	return [
 		clr[idx0  ] + rate0*( clr[idx1  ] - clr[idx0  ] ),
@@ -1270,7 +1243,7 @@ fDWL.lerpColor = function( idxA0,idxA1, idxB0,idxB1, idxC0,idxC1, rate0,rate1,ra
 //	dataType: データの型の配列( gl.TRIANGLES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN )
 //==================================================================
 fDWL.Objs3D = function( gl, pos, rot, scale, data, dataType ){
-		"use strict";
+	"use strict";
 	this.gl = gl;
 	this.pos = pos;
 	this.rotate = rot;
@@ -1281,7 +1254,7 @@ fDWL.Objs3D = function( gl, pos, rot, scale, data, dataType ){
 	this.data = data;
 	this.dataType = dataType;
 	
-	for( var idx in dataType ){
+	for( let idx in dataType ){
 		this.data[idx].vboList = [
 			fDWL.WGL.createVbo( gl, this.data[idx].p ),
 			fDWL.WGL.createVbo( gl, this.data[idx].n ),
@@ -1341,16 +1314,14 @@ fDWL.Objs3D.prototype = {
 	
 	draw: function( shader ){
 		"use strict";
-		var idx = 0,
-			objIdx = 0,
-			vboList = [],
-			gl = this.gl;
+		let vboList = [];
+		const gl = this.gl;
 		
 		// 各配列を描画処理
-		for( objIdx in this.dataType ){
+		for( let objIdx in this.dataType ){
 			vboList = this.data[objIdx].vboList;
 			
-			for( idx in vboList ){
+			for( let idx in vboList ){
 				gl.bindBuffer( gl.ARRAY_BUFFER, vboList[idx]);
 				gl.enableVertexAttribArray( shader.attrLoc[idx]);
 				gl.vertexAttribPointer( shader.attrLoc[idx], shader.attrStride[idx], gl.FLOAT, false, 0, 0);
@@ -1359,36 +1330,35 @@ fDWL.Objs3D.prototype = {
 			gl.drawElements( this.dataType[objIdx], this.data[objIdx].i.length, gl.UNSIGNED_SHORT, 0 );
 			gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, null );
 		}
-	},
+	}
 };
-
 
 //------------------------------------------------------------------
 // TiledFloor を生成
 //------------------------------------------------------------------
 fDWL.tiledFloor = function( tileLength, tileNum, color0, color1 ){
-		"use strict";
-	var unitNum = tileNum * tileNum;
-	var tlg = tileLength*0.5;
-	var unitPos = [
+	"use strict";
+	const tlg = tileLength*0.5;
+	const unitPos = [
 		-tlg, 0, -tlg,
 		-tlg, 0,  tlg,
 		 tlg, 0,  tlg,
 		 tlg, 0, -tlg
 	];
-	var unitNor = [ 0.0, 1.0, 0.0 ];
-	var pos = new Array();
-	var nor = new Array();
-	var col = new Array();
-	var idx = new Array();
-	var offsX = -tlg*(tileNum-1);
-	var offsZ = offsX;
-	var tlNo = 0;
-	var st = new Array();
+	const unitNor = [ 0.0, 1.0, 0.0 ];
+	let pos = new Array(),
+		nor = new Array(),
+		col = new Array(),
+		idx = new Array(),
+		st  = new Array(),
+		offsX = -tlg*(tileNum-1),
+		offsZ = offsX,
+		tlNo = 0;
+
 	// 黒のプレート
-	var offsX = tlg*(tileNum-1);
-	var offsZ = offsX;
-	for( var clmn = 0; clmn < tileNum; clmn++ ){
+	offsX = tlg*(tileNum-1);
+	offsZ = offsX;
+	for( let clmn = 0; clmn < tileNum; clmn++ ){
 		offsX = tlg*(tileNum-1)
 		for( var row = 0; row < tileNum; row++ ){
 			if( (row+clmn) & 0x01 ){
@@ -1409,7 +1379,7 @@ fDWL.tiledFloor = function( tileLength, tileNum, color0, color1 ){
 	}
 	// 白のプレート
 	offsZ = tlg*(tileNum-1);
-	for( var clmn = 0; clmn < tileNum; clmn++ ){
+	for( let clmn = 0; clmn < tileNum; clmn++ ){
 		offsX = tlg*(tileNum-1)
 		for( var row = 0; row < tileNum; row++ ){
 			if( ((row+clmn) & 0x01) == 0 ){
@@ -1431,141 +1401,14 @@ fDWL.tiledFloor = function( tileLength, tileNum, color0, color1 ){
 	return { p : pos, n : nor, c : col, t : st, i : idx };
 };
 
-
 //------------------------------------------------------------------
-// Cylinder を生成
+// WebGL版ブラウザ情報
 //------------------------------------------------------------------
-fDWL.cylinder = function( divNum, leng, rad, color, offs, rotate ){
-		"use strict";
-	var pos = new Array(),
-		nor = new Array(),
-		col = new Array(),
-		st  = new Array(),
-		idx = new Array(),
-		ang = 0,
-		x = 0,
-		z = 0,
-		px = 0,
-		pz = 0,
-		rs = 0,
-		posV = [],
-		norV = [],
-		modelMtx = mat4.identity(mat4.create());
-	
-	mat4.rotateX( modelMtx, rotate[0], modelMtx );
-	mat4.rotateZ( modelMtx, rotate[2], modelMtx );
-	mat4.rotateY( modelMtx, rotate[1], modelMtx );
-	
-	for(var ii = 0; ii <= divNum; ii++){
-		ang = Math.PI * 2 / divNum * ii;
-		x = Math.cos(ang),
-		z = Math.sin(ang);
-		px = x*rad+offs[0],
-		pz = z*rad+offs[2];
-		rs = ii/divNum;
-		
-		mat4.multiplyVec4( modelMtx, [ px, offs[1]-(leng/2), pz, 0 ], posV );
-		pos.push( posV[0], posV[1], posV[2] );
-		mat4.multiplyVec4( modelMtx, [ x, 0, z, 0 ], norV );
-		nor.push( norV[0], norV[1], norV[2] );
-
-		col.push( color[0], color[1], color[2], color[3] );
-		st.push( rs, 1.0 );
-		idx.push( ii*2 );
-		
-		mat4.multiplyVec4( modelMtx, [ px, offs[1]+(leng/2), pz, 0 ], posV );
-		pos.push( posV[0], posV[1], posV[2] );
-		nor.push( norV[0], norV[1], norV[2] );
-
-		col.push( color[0], color[1], color[2], color[3] );
-		st.push( rs, 0.0 );
-		idx.push( ii*2+1 );		//gl.TRIANGLE_STRIPを使用
-	}
-	return { p : pos, n : nor, c : col, t : st, i : idx };
-};
-
-
-//------------------------------------------------------------------
-// Corn を生成
-//	divNum		円の分割数
-//	leng		円錐高さ
-//	offs		中心座標(円の中心)
-//	rad			半径
-//	color		色
-//	normalDir	上方方向、1.0:通常、うつ伏せ:(-1.0)
-//------------------------------------------------------------------
-fDWL.corn = function( divNum, leng, rad, color, normalDir, offs, rotate ){
-		"use strict";
-	var pos = new Array(),
-		nor = new Array(),
-		col = new Array(),
-		st  = new Array(),
-		idx = new Array(),
-		ang = 0,
-		x = 0,
-		z = 0,
-		rx = 0,
-		ry = 0,
-		rz = 0,
-		slope = 0,
-		rs = 0,
-		rt = 0,
-		posV = [],
-		norV = [],
-		modelMtx = mat4.identity(mat4.create());
-	
-	mat4.rotateX( modelMtx, rotate[0], modelMtx );
-	mat4.rotateZ( modelMtx, rotate[2], modelMtx );
-	mat4.rotateY( modelMtx, rotate[1], modelMtx );
-	
-	slope = Math.sqrt( rad*rad + leng*leng );
-	ry = normalDir*rad/slope;
-	slope = leng/slope;
-	
-	// 頂点部分
-	mat4.multiplyVec4( modelMtx, [ offs[0], offs[1]+leng, offs[2], 0 ], posV );
-	pos.push( posV[0], posV[1], posV[2] );
-	mat4.multiplyVec4( modelMtx, [ 0, normalDir, 0, 0 ], norV );
-	nor.push( norV[0], norV[1], norV[2] );
-	
-	col.push( color[0], color[1], color[2], color[3] );
-	st.push( 0.5, 0.5 );
-	idx.push( 0 );		//gl.TRIANGLE_FANを使用
-	
-	for(var ii = 0; ii < divNum; ii++){
-		ang = Math.PI * 2 / divNum * ii;
-		x = Math.cos(-ang),
-		z = Math.sin(-ang);
-		
-		rx = x*slope*normalDir;
-		rz = z*slope*normalDir;
-		rs = 0.5-(x/2);
-		rt = 0.5-(z/2);
-		
-		mat4.multiplyVec4( modelMtx, [ x*rad+offs[0], offs[1], z*rad+offs[2], 0 ], posV );
-		pos.push( posV[0], posV[1], posV[2] );
-		mat4.multiplyVec4( modelMtx, [ rx, ry, rz, 0 ], norV );
-		nor.push( norV[0], norV[1], norV[2] );
-		col.push( color[0], color[1], color[2], color[3] );
-		st.push( rs, rt );
-		idx.push( ii+1 );		//gl.TRIANGLE_FANを使用
-	}
-	
-	// 円周部分終点＝始点
-	pos.push( pos[3], pos[4], pos[5] );
-	nor.push( nor[3], nor[4], nor[5] );
-	col.push( color[0], color[1], color[2], color[3] );
-	st.push( 0.0, 0.5 );
-	idx.push( divNum+1 );		//gl.TRIANGLE_FANを使用
-	
-	return { p : pos, n : nor, c : col, t : st, i : idx };
-};
-
 fDWL.getBrowserInfo = function( gl ){
-		"use strict";
-	var renderer = gl.getParameter( gl.RENDERER );
-	var vendor = gl.getParameter( gl.VENDOR );
-	var version = gl.getParameter( gl.VERSION );
-	var glslVersion = gl.getParameter( gl.SHADING_LANGUAGE_VERSION );
+	"use strict";
+	let renderer	= gl.getParameter( gl.RENDERER ),
+		vendor		= gl.getParameter( gl.VENDOR ),
+		version		= gl.getParameter( gl.VERSION ),
+		glslVersion = gl.getParameter( gl.SHADING_LANGUAGE_VERSION );
 	return [ renderer, vendor, version, glslVersion ];
 };
