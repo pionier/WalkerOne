@@ -24,6 +24,7 @@ fDWL.namespace = function(ns_string){
 };
 fDWL.namespace( 'fDWL.R4D' );
 fDWL.namespace( 'fDWL.WGL' );
+fDWL.namespace( 'fDWL.D4D' );
 
 //==================================================================
 fDWL.R4D.TriangleBuffer = function( gl, vtxNum ){
@@ -270,12 +271,12 @@ fDWL.R4D.affine4D = function( src, rotate, offs, scale ){
 	}
 	// 各Matrixの合成
 	mx4Rotate = mx4Scale.
-			mul( mx4Rots[0] ).
-			mul( mx4Rots[1] ).
-			mul( mx4Rots[2] ).
-			mul( mx4Rots[3] ).
+			mul( mx4Rots[5] ).
 			mul( mx4Rots[4] ).
-			mul( mx4Rots[5] );
+			mul( mx4Rots[3] ).
+			mul( mx4Rots[2] ).
+			mul( mx4Rots[1] ).
+			mul( mx4Rots[0] );
 	
 	// 各頂点のaffine変換
 	for( let idx = 0; idx < src.length; idx += 4 ){
@@ -295,6 +296,36 @@ fDWL.inProd4D = function( vec0, vec1 ){
 	"use strict";
 	return ( vec0[0]*vec1[0] + vec0[1]*vec1[1] + vec0[2]*vec1[2] + vec0[3]*vec1[3] );
 }
+
+//==================================================================
+// add4D
+// 四次元ベクトルの単純和を計算
+//------------------------------------------------------------------
+fDWL.add4D = function( vec0, vec1 ){
+	"use strict";
+	return [ vec0[0]+vec1[0], vec0[1]+vec1[1], vec0[2]+vec1[2], vec0[3]+vec1[3] ];
+}
+
+//==================================================================
+// addArray
+// 配列の単純和
+//------------------------------------------------------------------
+fDWL.addArray = function( array0, array1 ){
+	"use strict";
+	let dst, adder;
+	if( array0.length <= array1.length ){
+		dst = array0.concat();
+		adder = array1;
+	}else{
+		dst = array1.concat();
+		adder = array0;
+	}
+	for( let idx = 0; idx < dst.length; ++idx ){
+		dst[idx] += adder[idx];
+	}
+	return dst;
+}
+
 
 //==================================================================
 // calcNormal4D
@@ -1042,12 +1073,12 @@ fDWL.R4D.Pylams4D.prototype = {
 		}
 		// 各Matrixの合成
 		this.mx4Rot = mx4Scale.
-				mul( mx4Rots[0] ).
-				mul( mx4Rots[1] ).
-				mul( mx4Rots[2] ).
-				mul( mx4Rots[3] ).
+				mul( mx4Rots[5] ).
 				mul( mx4Rots[4] ).
-				mul( mx4Rots[5] );
+				mul( mx4Rots[3] ).
+				mul( mx4Rots[2] ).
+				mul( mx4Rots[1] ).
+				mul( mx4Rots[0] );
 		// 各頂点のaffine変換
 		for( let idx = 0; idx < this.vertex.length; idx += 4 ){
 			vec4 = this.mx4Rot.mulVec( this.vertex[idx], this.vertex[idx+1], this.vertex[idx+2], this.vertex[idx+3] );
@@ -1085,6 +1116,9 @@ fDWL.R4D.Pylams4D.prototype = {
 		"use strict";
 		// rotate = [ xy, yz, yh, zh, xh, xz ]
 		this.rotate = rotate;
+	},
+	getRotate: function(){
+		return this.rotate.concat();
 	},
 	// スケーリングの設定
 	setScale: function( scale ){
@@ -1272,7 +1306,7 @@ fDWL.Objs3D.prototype = {
 	
 	getPos: function(){
 		"use strict";
-		return this.pos;
+		return this.pos.concat();
 	},
 	setPos: function( pos ){
 		"use strict";
@@ -1281,16 +1315,21 @@ fDWL.Objs3D.prototype = {
 	
 	getRotate: function(){
 		"use strict";
-		return this.rotate;
+		return this.rotate.concat();
 	},
 	setRotate: function( rotate ){
 		"use strict";
 		this.rotate = rotate;
 	},
 	
+	setScale: function( scale ){
+		"use strict";
+		this.scale = scale;
+	},
+	
 	getScale: function(){
 		"use strict";
-		return this.scale;
+		return this.scale.concat();
 	},
 	
 	prepDraw: function( shader, viewProjMtx, shaderParam ){
@@ -1331,6 +1370,115 @@ fDWL.Objs3D.prototype = {
 			gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, null );
 		}
 	}
+};
+
+
+//==================================================================
+// Sphere4D
+// 疑似 4D Sphere Object
+//------------------------------------------------------------------
+//==================================================================
+fDWL.D4D.Sphere4D = function( gl, pos, rot, row, column, rad, color, shader ){
+	"use strict";
+	this.pos = pos;
+	this.scale = [ 1, 1, 1 ];
+	this.shader = shader;
+	this.radius = rad;
+	this.rotate = rot;
+	
+	this.Sphere3D = new fDWL.Objs3D( gl, [ pos[0], pos[1], pos[2] ], [ rot[0], rot[1], rot[2] ], this.scale, [ fDWL.sphere( row, column, rad, color ) ], [ gl.TRIANGLES ] );
+};
+
+
+//------------------------------------------------------------------
+// D4D Sphere Object Prototype
+//------------------------------------------------------------------
+fDWL.D4D.Sphere4D.prototype = {
+	
+	isDraw: function( hPos ){
+		"use strict";
+		const dstH = (this.pos[3]-hPos);
+		return (( -this.radius <= dstH )&&( dstH <= this.radius ));
+	},
+	
+	setPos: function( pos ){
+		"use strict";
+		this.pos = pos;
+		this.Sphere3D.setPos( pos );
+	},
+	getPos: function(){
+		"use strict";
+		return this.pos.concat();
+	},
+	
+	getRotate: function(){
+		"use strict";
+		return this.Sphere3D.getRotate();
+	},
+	setRotate: function( rotate ){
+		"use strict";
+		this.rot = rotate;
+		// ３Ｄ回転のみを抜粋
+		this.Sphere3D.setRotate( [ rotate[1], rotate[5], rotate[0] ] );
+	},
+	
+	getScale: function(){
+		"use strict";
+		return this.scale.concat();
+	},
+	
+	prepDraw: function( hPos, viewProjMtx, shaderParam ){
+		"use strict";
+		// スケール計算
+		const dstH = this.pos[3] - hPos;
+		const scaledR = Math.sqrt( this.radius*this.radius - dstH*dstH );
+		const scale = scaledR/this.radius;
+		this.scale = [ scale, scale, scale ];
+		this.Sphere3D.setScale( this.scale );
+		// 描画準備
+		this.Sphere3D.prepDraw( this.shader, viewProjMtx, shaderParam );
+	},
+	
+	draw: function(){
+		"use strict";
+		this.Sphere3D.draw( this.shader );
+	}
+};
+
+
+//------------------------------------------------------------------
+// Sphere を生成
+//------------------------------------------------------------------
+fDWL.sphere = function(row, column, rad, color){
+		"use strict";
+	var pos = new Array(), nor = new Array(),
+	    col = new Array(), st  = new Array(), index = new Array();
+	for( let idx = 0; idx <= row; idx++ ){
+		const r = Math.PI / row * idx;
+		const ry = Math.cos(r);
+		const rr = Math.sin(r);
+		for( let ii = 0; ii <= column; ii++ ){
+			const tr = Math.PI * 2 / column * ii;
+			const tx = rr * rad * Math.cos(tr);
+			const ty = ry * rad;
+			const tz = rr * rad * Math.sin(tr);
+			const rx = rr * Math.cos(tr);
+			const rz = rr * Math.sin(tr);
+			const tc = color?color:hsva(360 / row * idx, 1, 1, 1);
+			pos.push(tx, ty, tz);
+			nor.push(rx, ry, rz);
+			col.push(tc[0], tc[1], tc[2], tc[3]);
+			st.push(1 - 1 / column * ii, 1 / row * idx);
+		}
+	}
+	for( let idx = 0; idx < row; idx++){
+		for( let ii = 0; ii < column; ii++){
+			const r = (column + 1) * idx + ii;
+			index.push(r, r + 1, r + column + 2);
+			index.push(r, r + column + 2, r + column + 1);
+		}
+	}
+	return {p : pos, n : nor, c : col, t : st, i : index};
 };
 
 //------------------------------------------------------------------
@@ -1398,6 +1546,136 @@ fDWL.tiledFloor = function( tileLength, tileNum, color0, color1 ){
 		}
 		offsZ -= tileLength;
 	}
+	return { p : pos, n : nor, c : col, t : st, i : idx };
+};
+
+
+//------------------------------------------------------------------
+// Cylinder を生成
+//------------------------------------------------------------------
+fDWL.cylinder = function( divNum, leng, rad, color, offs, rotate ){
+	"use strict";
+	let pos = new Array(),
+		nor = new Array(),
+		col = new Array(),
+		st  = new Array(),
+		idx = new Array(),
+		ang = 0,
+		x = 0,
+		z = 0,
+		px = 0,
+		pz = 0,
+		rs = 0,
+		posV = [],
+		norV = [],
+		modelMtx = mat4.identity(mat4.create());
+	
+	mat4.rotateX( modelMtx, rotate[0], modelMtx );
+	mat4.rotateZ( modelMtx, rotate[2], modelMtx );
+	mat4.rotateY( modelMtx, rotate[1], modelMtx );
+	
+	for(let ii = 0; ii <= divNum; ii++){
+		ang = Math.PI * 2 / divNum * ii;
+		x = Math.cos(ang),
+		z = Math.sin(ang);
+		px = x*rad+offs[0],
+		pz = z*rad+offs[2];
+		rs = ii/divNum;
+		
+		mat4.multiplyVec4( modelMtx, [ px, offs[1]-(leng/2), pz, 0 ], posV );
+		pos.push( posV[0], posV[1], posV[2] );
+		mat4.multiplyVec4( modelMtx, [ x, 0, z, 0 ], norV );
+		nor.push( norV[0], norV[1], norV[2] );
+
+		col.push( color[0], color[1], color[2], color[3] );
+		st.push( rs, 1.0 );
+		idx.push( ii*2 );
+		
+		mat4.multiplyVec4( modelMtx, [ px, offs[1]+(leng/2), pz, 0 ], posV );
+		pos.push( posV[0], posV[1], posV[2] );
+		nor.push( norV[0], norV[1], norV[2] );
+
+		col.push( color[0], color[1], color[2], color[3] );
+		st.push( rs, 0.0 );
+		idx.push( ii*2+1 );		//gl.TRIANGLE_STRIPを使用
+	}
+	return { p : pos, n : nor, c : col, t : st, i : idx };
+};
+
+
+//------------------------------------------------------------------
+// Corn を生成
+//	divNum		円の分割数
+//	leng		円錐高さ
+//	offs		中心座標(円の中心)
+//	rad			半径
+//	color		色
+//	normalDir	上方方向、1.0:通常、うつ伏せ:(-1.0)
+//------------------------------------------------------------------
+fDWL.corn = function( divNum, leng, rad, color, normalDir, offs, rotate ){
+	"use strict";
+	let pos = new Array(),
+		nor = new Array(),
+		col = new Array(),
+		st  = new Array(),
+		idx = new Array(),
+		ang = 0,
+		x = 0,
+		z = 0,
+		rx = 0,
+		ry = 0,
+		rz = 0,
+		slope = 0,
+		rs = 0,
+		rt = 0,
+		posV = [],
+		norV = [],
+		modelMtx = mat4.identity(mat4.create());
+	
+	mat4.rotateX( modelMtx, rotate[0], modelMtx );
+	mat4.rotateZ( modelMtx, rotate[2], modelMtx );
+	mat4.rotateY( modelMtx, rotate[1], modelMtx );
+	
+	slope = Math.sqrt( rad*rad + leng*leng );
+	ry = normalDir*rad/slope;
+	slope = leng/slope;
+	
+	// 頂点部分
+	mat4.multiplyVec4( modelMtx, [ offs[0], offs[1]+leng, offs[2], 0 ], posV );
+	pos.push( posV[0], posV[1], posV[2] );
+	mat4.multiplyVec4( modelMtx, [ 0, normalDir, 0, 0 ], norV );
+	nor.push( norV[0], norV[1], norV[2] );
+	
+	col.push( color[0], color[1], color[2], color[3] );
+	st.push( 0.5, 0.5 );
+	idx.push( 0 );		//gl.TRIANGLE_FANを使用
+	
+	for(let ii = 0; ii < divNum; ii++){
+		ang = Math.PI * 2 / divNum * ii;
+		x = Math.cos(-ang),
+		z = Math.sin(-ang);
+		
+		rx = x*slope*normalDir;
+		rz = z*slope*normalDir;
+		rs = 0.5-(x/2);
+		rt = 0.5-(z/2);
+		
+		mat4.multiplyVec4( modelMtx, [ x*rad+offs[0], offs[1], z*rad+offs[2], 0 ], posV );
+		pos.push( posV[0], posV[1], posV[2] );
+		mat4.multiplyVec4( modelMtx, [ rx, ry, rz, 0 ], norV );
+		nor.push( norV[0], norV[1], norV[2] );
+		col.push( color[0], color[1], color[2], color[3] );
+		st.push( rs, rt );
+		idx.push( ii+1 );		//gl.TRIANGLE_FANを使用
+	}
+	
+	// 円周部分終点＝始点
+	pos.push( pos[3], pos[4], pos[5] );
+	nor.push( nor[3], nor[4], nor[5] );
+	col.push( color[0], color[1], color[2], color[3] );
+	st.push( 0.0, 0.5 );
+	idx.push( divNum+1 );		//gl.TRIANGLE_FANを使用
+	
 	return { p : pos, n : nor, c : col, t : st, i : idx };
 };
 

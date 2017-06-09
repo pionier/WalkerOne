@@ -8,7 +8,7 @@
 //	OnLoad
 //============================================================
 
-function phoenixGr(){
+function WalkerOne(){
 	"use strict";
 	var cnvs = document.getElementById('canvas'),
 		cntrls = {},
@@ -18,18 +18,12 @@ function phoenixGr(){
 		triangleShader = {},
 		TriBuffer = {},
 		TRI_BUFFER_SIZE = 4096,
-		PhoenixHead_SCALE = 0.05,
-		PhoenixBody_SCALE = 0.2,
-		PhoenixFoot_SCALE = 0.2,
+		WalkerBody_SCALE = 1,
 		Phoenix_OffsY = 0,
 		Phoenix_OffsH = 3,
 		EquinoxFloor = {},
-		PhoenixHead = {},
-		PhoenixBody = {},
-		PhoenixFoot = [],
-		PhoenixRotate = [ 0,0,0,0,0,Math.PI ],
-		keyStatus = [ false, false, false, false, false, false ],
-		SIGHT_LENGTH = 3,
+		keyStatus = [ false, false, false, false, false, false, false ],
+		SIGHT_LENGTH = 3*2,
 		SIGHT_HEIGHT = 2,
 		ROT_RATE = 0.02,
 		VELOCITY = 0.05,
@@ -47,90 +41,11 @@ function phoenixGr(){
 		dpMatrix		= mat4.identity(mat4.create()),
 		dvpMatrix		= mat4.identity(mat4.create());
 	
-	var Detector = {
-
-		canvas: !! window.CanvasRenderingContext2D,
-		webgl: ( function () {
-
-			try {
-
-				var canvas = document.getElementById( 'canvas_' );
-				//return !! ( window.WebGLRenderingContext && ( canvas.getContext( 'webgl' ) || canvas.getContext( 'experimental-webgl' ) ) );
-				var renderContext = window.WebGLRenderingContext;
-				var newGl = canvas.getContext( 'webgl' );
-				var oldGl = canvas.getContext( 'experimental-webgl' );
-				if( !renderContext ){
-					return false;
-				}
-				if( newGl ){
-					return true;
-				}
-				if( oldGl ){
-					return true;
-				}
-				return false;
-
-			} catch ( e ) {
-
-				return false;
-
-			}
-
-		} )(),
-		workers: !! window.Worker,
-		fileapi: window.File && window.FileReader && window.FileList && window.Blob,
-
-		getWebGLErrorMessage: function () {
-
-			var element = document.createElement( 'div' );
-			element.id = 'webgl-error-message';
-			element.style.fontFamily = 'monospace';
-			element.style.fontSize = '13px';
-			element.style.fontWeight = 'normal';
-			element.style.textAlign = 'center';
-			element.style.background = '#fff';
-			element.style.color = '#000';
-			element.style.padding = '1.5em';
-			element.style.width = '400px';
-			element.style.margin = '5em auto 0';
-
-			if ( ! this.webgl ) {
-
-				element.innerHTML = window.WebGLRenderingContext ? [
-					'Your graphics card does not seem to support <a href="http://khronos.org/webgl/wiki/Getting_a_WebGL_Implementation" style="color:#000">WebGL</a>.<br />',
-					'Find out how to get it <a href="http://get.webgl.org/" style="color:#000">here</a>.'
-				].join( '\n' ) : [
-					'Your browser does not seem to support <a href="http://khronos.org/webgl/wiki/Getting_a_WebGL_Implementation" style="color:#000">WebGL</a>.<br/>',
-					'Find out how to get it <a href="http://get.webgl.org/" style="color:#000">here</a>.'
-				].join( '\n' );
-			}
-			return element;
-		},
-
-		addGetWebGLMessage: function ( parameters ) {
-			var parent, id, element;
-			parameters = parameters || {};
-			parent = parameters.parent !== undefined ? parameters.parent : document.body;
-			id = parameters.id !== undefined ? parameters.id : 'oldie';
-			element = Detector.getWebGLErrorMessage();
-			element.id = id;
-			parent.appendChild( element );
-		}
-	};	
-	
-	if( !Detector.webgl ){
-		var warning = Detector.getWebGLErrorMessage();
-  		  document.getElementById('container').appendChild(warning);
-		return;
-	}
-	
 	try{
 		if( !window.WebGLRenderingContext ){
 			alert("No GL context.");
 			return;
 		}
-//		cnvs = document.createElement('canvas');
-		cnvs = document.getElementById('canvas_');
 		gl = cnvs.getContext('webgl') || cnvs.getContext('experimental-webgl');
 		if( !gl ){
 			alert("Fail to create GL.\r\nPlease use Chrome or FireFox.");
@@ -145,22 +60,7 @@ function phoenixGr(){
 	
 	cnvs.width  = 512;
 	cnvs.height = 384;
-	cnvs.whickSelected = 0;
-	cnvs.isGouraud = false;
-	cnvs.shaderChanged = false;
 	
-/*
-		var info = {
-			up:		"ArrowUp",
-			down:	"ArrowDown",
-			left:	"ArrowLeft",
-			right:	"ArrowRight",
-			shift:	"Shift",
-			keyB:	"b",
-			keyF:	"f",
-			keyG:	"g",
-		};
-*/
 	// キーイベント
 	if( window.addEventListener ){
 		function KeyDownFunc( evt ){
@@ -184,26 +84,10 @@ function phoenixGr(){
 			if( keyname === keyEventNames.keyB ){
 				keyStatus[5] = true;
 			}
-/*
-			if( keyname === 'ArrowUp' ){
-				keyStatus[0] = true;
+			if( keyname === keyEventNames.ctrl ){
+				keyStatus[6] = true;
 			}
-			if( keyname === 'ArrowDown' ){
-				keyStatus[1] = true;
-			}
-			if( keyname === 'ArrowLeft' ){
-				keyStatus[2] = true;
-			}
-			if( keyname === 'ArrowRight' ){
-				keyStatus[3] = true;
-			}
-			if( keyname === 'Shift' ){
-				keyStatus[4] = true;
-			}
-			if( keyname === 'b' ){
-				keyStatus[5] = true;
-			}
-*/
+			
 		}
 		
 		function KeyUpFunc( evt ){
@@ -227,42 +111,9 @@ function phoenixGr(){
 			if( keyname === keyEventNames.keyB ){
 				keyStatus[5] = false;
 			}
-			if( keyname === keyEventNames.keyF ){
-				cntrls.isGouraud = false;
-				cntrls.shaderChanged = true;
+			if( keyname === keyEventNames.ctrl ){
+				keyStatus[6] = false;
 			}
-			if( keyname === keyEventNames.keyG ){
-				cntrls.isGouraud = true;
-				cntrls.shaderChanged = true;
-			}
-/*
-			if( keyname === 'ArrowUp' ){
-				keyStatus[0] = false;
-			}
-			if( keyname === 'ArrowDown' ){
-				keyStatus[1] = false;
-			}
-			if( keyname === 'ArrowLeft' ){
-				keyStatus[2] = false;
-			}
-			if( keyname === 'ArrowRight' ){
-				keyStatus[3] = false;
-			}
-			if( keyname === 'Shift' ){
-				keyStatus[4] = false;
-			}
-			if( keyname === 'b' ){
-				keyStatus[5] = false;
-			}
-			if( keyname === 'g' ){
-				cntrls.isGouraud = true;
-				cntrls.shaderChanged = true;
-			}
-			if( keyname === 'f' ){
-				cntrls.isGouraud = false;
-				cntrls.shaderChanged = true;
-			}
-*/
 		}
 		// ドキュメントにリスナーを登録
 		document.addEventListener( "keydown", KeyDownFunc, false );
@@ -272,7 +123,7 @@ function phoenixGr(){
 	
 	// 移動方向
 	let moveXZ = {
-		rot:	0,					// 移動方向
+		rot:	Math.PI/2,					// 移動方向
 		vel:	0.0,				// 移動量
 		dif:	[ 0.0, 0.0 ]		// 実移動量(偏差)
 	};
@@ -280,7 +131,7 @@ function phoenixGr(){
 	// 視線ベクトル
 	views = {
 		eyePosition:	[ 0,  SIGHT_HEIGHT, SIGHT_LENGTH ],
-		lookAt:			[   0, 0, -8 ],
+		lookAt:			[ 4, 0, 0 ],
 		height:			1
 	};
 	
@@ -332,431 +183,499 @@ function phoenixGr(){
 	TriBuffer = new fDWL.R4D.TriangleBuffer( gl, TRI_BUFFER_SIZE );
 	
 /**/
-	// 彫像頭部の生成
-	PhoenixHead = new fDWL.R4D.Pylams4D(
-		gl,
-		triangleShader.prg,
-		[ 0,Phoenix_OffsY,-5,Phoenix_OffsH ],							// pos
-		PhoenixRotate,										// rotate
-		[ PhoenixHead_SCALE, PhoenixHead_SCALE, PhoenixHead_SCALE, PhoenixHead_SCALE ],
-		[	// vertex
-			0, 1,16,  0,   0, 3,17,0,  0,7.7,10,0,  4.6,7.7,10,0,  0,7.7,10,4.6,	// 0-4
-			0, 9,15.5,0,   0, 9, 8,0,  6,9, 8,0,  0,9,8,6,							// 5-8
-			0,13,15,  0,   0,17, 9,0,  0,5,13,0,  0,6,8,0,							// 9-12
-			0,13, 0,  0,   0,11, 2,0,  5,11,2,0,  0,11,2,5,  0,4,2,0,				// 13-17
-			0,21, 2,  0,   0,15, 7,0,  1,15,7,0,  0,15,7,1,							// 18-21
-			-6,9, 8,  0,   0, 9, 8,-6, -5,11,2,0,  0,11,2,-5,						// 22-25
-			-4.6,7.7,10,0, 0,7.7,10,-4.6, -1,15,7,0,  0,15,7,-1						// 26-29
-		],
-		[	// color
-			255,255,255,255, 255, 64, 64,255, 255,127,127,255, 255,191,191,255,		// 白、紅、赤、桃
-			127,255,255,255, 255,127,255,255, 255,255,127,255, 255,127,64,255, 		// C, M, Y, 朱
-		],
-		[	// center
-			0,9,8,0, 0,1,7,0, 0,11,2,0, 0,13,19,0, 
-		],
-		[	// index of pylamids
-			// part A
-			0,1,26,3, 0,1,3,4, 0,1,26,4, 0,26,3,4, 1,26,3,4,
-			1,5,22,7, 1,5,22,8, 1,5,7,8, 1,22,7,8, 5,22,7,8,
-			5,9,22,7, 5,9,22,8, 5,9,7,8, 5,22,7,8, 9,22,7,8,
-			9,10,22,7, 9,10,22,8, 9,10,7,8, 9,22,7,8, 10,22,7,8,
-			11,12,22,7, 11,12,22,8, 11,12,7,8, 11,22,7,8, 12,22,7,8,
-			10,13,24,15, 10,13,24,16, 10,13,15,16, 10,24,15,16, 13,24,15,16,
-			12,17,24,15, 12,17,24,16, 12,17,15,16, 12,24,15,16, 17,24,15,16,
-			10,18,28,20, 10,18,28,21, 10,18,20,21, 10,28,20,21, 18,28,20,21,
-			10,15,16,7, 10,15,16,8, 10,15,7,8, 10,16,7,8, 15,16,7,8,
-			12,15,16,7, 12,15,16,8, 12,15,7,8, 12,16,7,8, 15,16,7,8,
-			// part B
-			10,24,25,22, 10,24,25,23, 10,24,22,23, 10,25,22,23, 24,25,22,23,
-			12,24,25,22, 12,24,25,23, 12,24,22,23, 12,25,22,23, 24,25,22,23,
-			// part C
-			0,1,26,3, 0,1,26,27, 0,1,3,27, 0,26,3,27, 1,26,3,27,
-			1,5,22,7, 1,5,22,23, 1,5,7,23, 1,22,7,23, 5,22,7,23,
-			5,9,22,7, 5,9,22,23, 5,9,7,23, 5,22,7,23, 9,22,7,23,
-			9,10,22,7, 9,10,22,23, 9,10,7,23, 9,22,7,23, 10,22,7,23,
-			11,12,22,7, 11,12,22,23, 11,12,7,23, 11,22,7,23, 12,22,7,23,
-			10,13,24,15, 10,13,24,25, 10,13,15,25, 10,24,15,25, 13,24,15,25,
-			12,17,24,15, 12,17,24,25, 12,17,15,25, 12,24,15,25, 17,24,15,25,
-			10,18,28,20, 10,18,28,29, 10,18,20,29, 10,28,20,29, 18,28,20,29,
-			10,15,25, 7, 10,15,25,23, 10,15, 7,23, 10,25, 7,23, 15,25, 7,23,
-			12,15,25, 7, 12,15,25,23, 12,15, 7,23, 12,25, 7,23, 15,25, 7,23,
-			// part D
-			10,24,16,22, 10,24,16, 8, 10,24,22, 8, 10,16,22, 8, 24,16,22, 8,
-			12,24,16,22, 12,24,16, 8, 12,24,22, 8, 12,16,22, 8, 24,16,22, 8
-		],
-		[	// chrnIdx: 各五胞体の構成頂点index
-			// part A
-			0,1,26,3,4, 1,5,22,7,8, 5,9,22,7,8, 9,10,22,7,8, 11,12,22,7,8,
-			10,13,24,15,16, 12,17,24,15,16, 10,18,28,20,21,
-			10,15,16,7,8, 12,15,16,7,8,
-			// part B
-			10,24,25,22,23, 12,24,25,22,23,
-			// part C
-			0,1,26,3,27, 1,5,22,7,23, 5,9,22,7,23, 9,10,22,7,23, 11,12,22,7,23,
-			10,13,24,15,25, 12,17,24,15,25, 10,18,28,20,29,
-			10,15,25,7,23, 12,15,25,7,23,
-			// part D
- 			10,24,16,22,8, 12,24,16,22,8
-		],
-		[	// centIdx
-			1,1,1,3,1, 1,1,1,3,1, 
-			0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
-			2,2,2,2,2, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
-			1,1,1,3,1, 1,1,1,3,1, 
-			0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
-			2,2,2,2,2, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
-		],
-		[	// color index of pylamid
-			6,6,6,6,6, 6,6,6,6,6,
-			1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 
-			7,7,7,7,7, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 
-			6,6,6,6,6, 6,6,6,6,6,
-			1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 
-			7,7,7,7,7, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 
-		],
-		[ 0,2.2,0.9,0 ],							// offs: vertex生成時位置オフセット
-		[ 0.0, -Math.PI/4, 0.0, 0.0, 0.0, 0.0 ]		// rot:  vertex生成時回転
-	);
-	// シェーディングルーチン選択
-	PhoenixHead.setTriangle = PhoenixHead.setTriangleFlat;
-//	PhoenixHead.setTriangle = PhoenixHead.setTriangleGouraud;
-	PhoenixHead.getNormal = PhoenixHead.getNormalVertex;
-	PhoenixHead.getColor = PhoenixHead.getColorPlane;
-	// 初期化変換
-	PhoenixHead.transform();
-	PhoenixHead.setTriBuffer( TriBuffer );
-/**/
-	
-	// 彫像胴部の生成
-	PhoenixBody = new fDWL.R4D.Pylams4D(
-		gl,
-		triangleShader.prg,
-		[ 0,Phoenix_OffsY,-5,Phoenix_OffsH ],							// pos
-		PhoenixRotate,										// rotate
-		[ PhoenixBody_SCALE, PhoenixBody_SCALE, PhoenixBody_SCALE, PhoenixBody_SCALE ],
-		[	// vertex
-			0,14,22,0,  0,12,14,0,  0,8,13,0,  4,8,13,0,  0,8,13,4, 			// 0-4
-			0,5,15,0,   3,5,15,0,   0,5,15,3,  0,4,16,0,  0,2,6,0,				// 5-9
-			0,1.6,4,0,  0,1.2,4,0,  2,0,0,0,   -4,8,13,0, 0,8,13,-4, 			// 10-14
-			-3,5,15,0,  0,5,15,-3,  0,0,0,2,   -2,0,0,0,  0,0,0,-2,				// 15-19
-			0,10,16,0,  0,10,14,0,  											// 20-21
-			0,9,14,2,   2,9,14,0,   0,9,14,-2,  -2,9,14,0,						// 22-25
-			12,15,16,0, 0,15,16,12, -12,15,16,0, 0,15,16,-12,					// 26-29:wingtop
-			0,2.2,7,0,															// 30:tail
-			0,6,14,0,   1,6,16,0,   2,6,14,0,   0,6,16,2,   2,2,13,0,			// 31-35:legL
-			0,6,14,0,  -1,6,16,0,  -2,6,14,0,   0,6,16,-2, -2,2,13,0,			// 36-40:legR
-			0,6,14,0,   0,6,16,1,   0,6,14,2,   2,6,16,0,   0,2,13,2,			// 41-45:legHL
-			0,6,14,0,   0,6,16,-1,  0,6,14,-2, -2,6,16,0,   0,2,13,-2,			// 46-50:legHR
-			9.6,14,15.6,0, 9.6,13.6,15.3,0, 9.6,13.8,15.2,0.4, 16,13,6,0, 		// 51-54:1st featherL
-			-9.6,14,15.6,0, -9.6,13.6,15.3,0, -9.6,13.8,15.2,0.4, -16,13,6,0, 	// 55-58:1st featherR
-			0,14,15.6,9.6, 0,13.6,15.3,9.6, 0.4,13.8,15.2,9.6, 0,13,6,16, 		// 59-62:1st featherHL
-			0,14,15.6,-9.6, 0,13.6,15.3,-9.6, 0.4,13.8,15.2,-9.6, 0,13,6,-16, 	// 63-66:1st featherHR
-			13,9,2,0, 9.6,14,15.6,0, 7.2,13,15.2,0, 7.2,12.2,14.8,0, 7.2,12.6,15.2,0.8, 		// 67-71:2nd ftrL
-			-13,9,2,0, -9.6,14,15.6,0, -7.2,13,15.2,0, -7.2,12.2,14.8,0, -7.2,12.6,15.2,0.8, 	// 72-76:2nd ftrR
-			0,9,2, 13, 0,14,15.6, 9.6, 0,13,15.2, 7.2, 0,12.2,14.8, 7.2, 0.8,12.6,15.2,7.2, 	// 77-81:2nd ftrHL
-			0,9,2,-13, 0,14,15.6,-9.6, 0,13,15.2,-7.2, 0,12.2,14.8,-7.2, 0.8,12.6,15.2,-7.2, 	// 82-86:2nd ftrHR
-			10,7,5,0, 7.2,13,15.2,0, 5.0,12,14.8,0, 5.0,10.8,14.2,0, 5.0,11.4,14.8,1.2, 		// 87-91:3rd ftrL
-			-10,7,5,0, -7.2,13,15.2,0, -5.0,12,14.8,0, -5.0,10.8,14.2,0, -5.0,11.4,14.8,1.2, 	// 92-96:3rd ftrR
-			0,7,5,10, 0,13,15.2,7.2, 0,12,14.8,5.0, 0,10.8,14.2,5.0, 1.2,11.4,14.8,5.0, 		// 97-101:3rd ftrHL
-			0,7,5,-10, 0,13,15.2,-7.2, 0,12,14.8,-5.0, 0,10.8,14.2,-5.0, -1.2,11.4,14.8,-5.0, 	// 102-106:3rd ftrHL
-			 7,4,8,0,  5.0,12,14.8,0,  3.0,11,14.2,0,  3.0,10,14,0,  3.0,10.2,14.2,1.6, 		// 107-111:4th ftrL
-			-7,4,8,0, -5.0,12,14.8,0, -3.0,11,14.2,0, -3.0,10,14,0, -3.0,10.2,14.2,1.6, 		// 112-116:4th ftrR
-			0,4,8, 7, 0,12,14.8, 5.0, 0,11,14.2, 3.0, 0,10,14, 3.0,  1.6,10.2,14.2, 3.0, 		// 117-121:4th ftrHL
-			0,4,8,-7, 0,12,14.8,-5.0, 0,11,14.2,-3.0, 0,10,14,-3.0, -1.6,10.2,14.2,-3.0, 		// 122-126:4th ftrHR
-		],
-		[	// color
-			255,255,255,255, 255, 64, 64,255, 255,127,127,255, 255,191,191,255,		// 白、紅、赤、桃
-			127,255,255,255, 255,127,255,255, 255,255,127,255, 255,127,64,255, 		// C, M, Y, 朱
-		],
-		[	// center
-			0,8,14,0, 11.36,13.88,13.62,0.08, -11.36,13.88,13.62,0.08, 				// main,fthr1L, fthr1R
-		],
-		[	// index of pylamids
-			0, 1, 3,13, 0, 1, 3, 4, 0, 1,13, 4, 0, 3,13, 4,  1, 3,13, 4, 
-			0, 1, 3,13, 0, 1, 3,14, 0, 1,13,14, 0, 3,13,14,  1, 3,13,14, 
-			0, 3, 4, 6, 0, 3, 4, 7, 0, 3, 6, 7, 0, 4, 6, 7,  3, 4, 6, 7, 
-			0, 3,14, 6, 0, 3,14,16, 0, 3, 6,16, 0,14, 6,16,  3,14, 6,16, 
-			0,13, 4,15, 0,13, 4, 7, 0,13,15, 7, 0, 4,15, 7, 13, 4,15, 7, 
-			0,13,14,15, 0,13,14,16, 0,13,15,16, 0,14,15,16, 13,14,15,16, 
-			0, 8, 6,15, 0, 8, 6, 7, 0, 8,15, 7, 0, 6,15, 7,  8, 6,15, 7, 
-			0, 8, 6,15, 0, 8, 6,16, 0, 8,15,16, 0, 6,15,16,  8, 6,15,16, 
-			9, 1, 3,13, 9, 1, 3, 4, 9, 1,13, 4, 9, 3,13, 4,  1, 3,13, 4, 
-			9, 1, 3,13, 9, 1, 3,14, 9, 1,13,14, 9, 3,13,14,  1, 3,13,14, 
-			9, 3, 4, 6, 9, 3, 4, 7, 9, 3, 6, 7, 9, 4, 6, 7,  3, 4, 6, 7, 
-			9, 3,14, 6, 9, 3,14,16, 9, 3, 6,16, 9,14, 6,16,  3,14, 6,16, 
-			9,13, 4,15, 9,13, 4, 7, 9,13,15, 7, 9, 4,15, 7, 13, 4,15, 7, 
-			9,13,14,15, 9,13,14,16, 9,13,15,16, 9,14,15,16, 13,14,15,16, 
-			9, 8, 6,15, 9, 8, 6, 7, 9, 8,15, 7, 9, 6,15, 7,  8, 6,15, 7, 
-			9, 8, 6,15, 9, 8, 6,16, 9, 8,15,16, 9, 6,15,16,  8, 6,15,16,
-			30,10,11,12, 30,10,11,17, 30,10,12,17, 30,11,12,17, 10,11,12,17, 
-			30,10,11,18, 30,10,11,17, 30,10,18,17, 30,11,18,17, 10,11,18,17, 
-			30,10,11,12, 30,10,11,19, 30,10,12,19, 30,11,12,19, 10,11,12,19, 
-			30,10,11,18, 30,10,11,19, 30,10,18,19, 30,11,18,19, 10,11,18,19, 
-			20,21,2,22, 20,21,2,26, 20,21,22,26, 20,2,22,26, 21,2,22,26, 		// wing
-			20,21,2,23, 20,21,2,27, 20,21,23,27, 20,2,23,27, 21,2,23,27, 
-			20,21,2,24, 20,21,2,28, 20,21,24,28, 20,2,24,28, 21,2,24,28, 
-			20,21,2,25, 20,21,2,29, 20,21,25,29, 20,2,25,29, 21,2,25,29, 
-			31,32,33,34, 31,32,33,35, 31,32,34,35, 31,33,34,35, 32,33,34,35, 	// leg
-			36,37,38,39, 36,37,38,40, 36,37,39,40, 36,38,39,40, 37,38,39,40, 
-			41,42,43,44, 41,42,43,45, 41,42,44,45, 41,43,44,45, 42,43,44,45, 
-			46,47,48,49, 46,47,48,50, 46,47,49,50, 46,48,49,50, 47,48,49,50, 
-			26,51,52,53, 26,51,52,54, 26,51,53,54, 26,52,53,54, 51,52,53,54, 	// feather 1st
-			28,55,56,57, 28,55,56,58, 28,55,57,58, 28,56,57,58, 55,56,57,58, 
-			27,59,60,61, 27,59,60,62, 27,59,61,62, 27,60,61,62, 59,60,61,62, 
-			29,63,64,65, 29,63,64,66, 29,63,65,66, 29,64,65,66, 63,64,65,66, 
-			67,68,69,70, 67,68,69,71, 67,68,70,71, 67,69,70,71, 68,69,70,71, 	// feather 2nd
-			72,73,74,75, 72,73,74,76, 72,73,75,76, 72,74,75,76, 73,74,75,76, 
-			77,78,79,80, 77,78,79,81, 77,78,80,81, 77,79,80,81, 78,79,80,81, 
-			82,83,84,85, 82,83,84,86, 82,83,85,86, 82,84,85,86, 83,84,85,86, 
-			87,88,89,90, 87,88,89,91, 87,88,90,91, 87,89,90,91, 88,89,90,91, 	// feather 3rd
-			92,93,94,95, 92,93,94,96, 92,93,95,96, 92,94,95,96, 93,94,95,96, 
-			97,98,99,100, 97,98,99,101, 97,98,100,101, 97,99,100,101, 98,99,100,101, 
-			102,103,104,105, 102,103,104,106, 102,103,105,106, 102,104,105,106, 103,104,105,106, 
-			107,108,109,110, 107,108,109,111, 107,108,110,111, 107,109,110,111, 108,109,110,111,  	// feather 4th
-			112,113,114,115, 112,113,114,116, 112,113,115,116, 112,114,115,116, 113,114,115,116, 
-			117,118,119,120, 117,118,119,121, 117,118,120,121, 117,119,120,121, 118,119,120,121, 
-			122,123,124,125, 122,123,124,126, 122,123,125,126, 122,124,125,126, 123,124,125,126, 
-		],
-		[	// chrnIdx: 各五胞体の構成頂点index
-			0,1,3,13,4, 0,1,3,13,14, 0,3,4,6,7, 0,3,14,6,16, 0,13,4,15,7, 0,13,14,15,16, 0,8,6,15,7, 0,8,6,15,16, 
-			9,1,3,13,4, 9,1,3,13,14, 9,3,4,6,7, 9,3,14,6,16, 9,13,4,15,7, 9,13,14,15,16, 9,8,6,15,7, 9,8,6,15,16, 
-			30,10,11,12,17, 30,10,11,18,17, 30,10,11,12,19, 30,10,11,18,19,
-			20,21,2,22,26,  20,21,2,23,27,  20,21,2,24,28,  20,21, 2,25,29, 			// WingLhLRhR
-			31,32,33,34,35, 36,37,38,39,40, 41,42,43,44,45, 46,47,48,49,50, 			// legLRhLhR
-			26,51,52,53,54, 28,55,56,57,58, 27,59,60,61,62, 29,63,64,65,66, 			// feather
-			67,68,69,70,71, 72,73,74,75,76, 77,78,79,80,81, 82,83,84,85,86, 
-			87,88,89,90,91, 92,93,94,95,96, 97,98,99,100,101, 102,103,104,105,106, 
-			107,108,109,110,111, 112,113,114,115,116, 117,118,119,120,121, 122,123,124,125,126, 
-		],
-		[	// centIdx
-			0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
-			0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
-			0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
-			0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
-			0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
-			0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0,
-			1,1,1,1,1, 2,2,2,2,2,
-			0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
-			0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
-			0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
-		],
-		[	// color index of pylamid
-			1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 
-			1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 
-			1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 
-			1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 
-			1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 
-			1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 7,7,7,7,7, 7,7,7,7,7, 
-			7,7,7,7,7, 7,7,7,7,7, 7,7,7,7,7, 7,7,7,7,7, 7,7,7,7,7, 
-			7,7,7,7,7, 7,7,7,7,7, 7,7,7,7,7, 7,7,7,7,7, 7,7,7,7,7, 
-			7,7,7,7,7, 7,7,7,7,7, 7,7,7,7,7, 7,7,7,7,7, 
-		],
-		[ 0,0.05,-3.4,0 ],							// offs: vertex生成時位置オフセット
-		[ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ]		// rot:  vertex生成時回転
-	);
-	// シェーディングルーチン選択
-	PhoenixBody.setTriangle = PhoenixBody.setTriangleFlat;
-//	PhoenixBody.setTriangle = PhoenixHead.setTriangleGouraud;
-	PhoenixBody.getNormal = PhoenixBody.getNormalVertex;
-	PhoenixBody.getColor = PhoenixBody.getColorPlane;
-	// 初期化変換
-	PhoenixBody.transform();
-	PhoenixBody.setTriBuffer( TriBuffer );
-	
-/**/	// 彫像脚部の生成
-	(function(){
-		"use strict";
-		var idx = 0,
-			pos = [ 0,Phoenix_OffsY,-5,Phoenix_OffsH ],
-			//rot = [ 0,0,0,0,0,Math.PI ]
-			locZ = -0.8,
-			colors = [
-				255,255,255,255, 255, 64, 64,255, 255,127,127,255, 80,20,0,255,			// 白、紅、赤、赤茶
-				127,255,255,255, 255,127,255,255, 255,255,127,255, 255,127,64,255, 		// C, M, Y, 朱
-			],
-			centers = [
-				0,1,2,0, 0,-1,1,0, 0,-0.5,7,0
-			],
-			pylamIdx = [
-				0,1,2,3, 0,1,2,4, 0,1,3,4, 0,2,3,4, 1,2,3,4, 
-				0,1,2,3, 0,1,2,5, 0,1,3,5, 0,2,3,5, 1,2,3,5, 
-				6,7,8,9, 6,7,8,10, 6,7,9,10, 6,8,9,10, 7,8,9,10, 
-				6,7,8,9, 6,7,8,11, 6,7,9,11, 6,8,9,11, 7,8,9,11, 
-				12,13,14,15, 12,13,14,16, 12,13,15,16, 12,14,15,16, 13,14,15,16, 
-				12,13,14,15, 12,13,14,17, 12,13,15,17, 12,14,15,17, 13,14,15,17, 
-				18,19,20,21, 18,19,20,22, 18,19,21,22, 18,20,21,22, 19,20,21,22, 
-				18,19,20,21, 18,19,20,23, 18,19,21,23, 18,20,21,23, 19,20,21,23, 
-				24,25,26,27, 24,25,26,28, 24,25,27,28, 24,26,27,28, 25,26,27,28, 
-				24,25,26,27, 24,25,26,29, 24,25,27,29, 24,26,27,29, 25,26,27,29, 
-				30,31,32,33, 30,31,32,34, 30,31,33,34, 30,32,33,34, 31,32,33,34, 
-				30,31,32,33, 30,31,32,35, 30,31,33,35, 30,32,33,35, 31,32,33,35, 
-				36,37,38,39, 36,37,38,40, 36,37,39,40, 36,38,39,40, 37,38,39,40, 
-				36,37,38,39, 36,37,38,41, 36,37,39,41, 36,38,39,41, 37,38,39,41, 
-				42,43,44,45, 42,43,44,46, 42,43,45,46, 42,44,45,46, 43,44,45,46, 
-				42,43,44,45, 42,43,44,47, 42,43,45,47, 42,44,45,47, 43,44,45,47, 
-				48,49,50,51, 48,49,50,52, 48,49,51,52, 48,50,51,52, 49,50,51,52, 
-				48,49,50,51, 48,49,50,53, 48,49,51,53, 48,50,51,53, 49,50,51,53, 
-				54,55,56,57, 54,55,56,58, 54,55,57,58, 54,56,57,58, 55,56,57,58, 
-				54,55,56,57, 54,55,56,59, 54,55,57,59, 54,56,57,59, 55,56,57,59, 
-			],
-			chrnIdx = [
-				0,1,2,3,4, 0,1,2,3,5, 6,7,8,9,10, 6,7,8,9,11, 
-				12,13,14,15,16, 12,13,14,15,17, 18,19,20,21,22, 18,19,20,21,23, 
-				24,25,26,27,28, 24,25,26,27,29, 30,31,32,33,34, 30,31,32,33,35, 
-				36,37,38,39,40, 36,37,38,39,41, 42,43,44,45,46, 42,43,44,45,47, 
-				48,49,50,51,52, 48,49,50,51,53, 54,55,56,57,58, 54,55,56,57,59, 
-			],
-			centIdx = [
-				0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 1,1,1,1,1, 
-				1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 2,2,2,2,2, 2,2,2,2,2, 
-				2,2,2,2,2, 2,2,2,2,2, 2,2,2,2,2, 2,2,2,2,2, 2,2,2,2,2, 
-				2,2,2,2,2, 2,2,2,2,2, 2,2,2,2,2, 2,2,2,2,2, 2,2,2,2,2, 
-			],
-			colorIdx = [
-				3,3,3,3,3, 3,3,3,3,3, 3,3,3,3,3, 3,3,3,3,3, 3,3,3,3,3, 
-				3,3,3,3,3, 6,6,6,6,6, 6,6,6,6,6, 3,3,3,3,3, 3,3,3,3,3, 
-				6,6,6,6,6, 6,6,6,6,6, 3,3,3,3,3, 3,3,3,3,3, 6,6,6,6,6, 
-				6,6,6,6,6, 3,3,3,3,3, 3,3,3,3,3, 6,6,6,6,6, 6,6,6,6,6, 
-			];
+	const LegBaseHeight = -0.5;
+	const LEG_NUM = 1;				// 脚の本数
+	// Leg of Walkers
+	let LegSet = function( legNo, pos, rotate, shader, brain ){
+		this.id = legNo;
+		this.pos = pos.concat();						// LegSet全体の4次元座標
+		this.rot = rotate;
+		this.basePos = [ 0,0,0,0 ];							// 常に0
+		//this.anklePos = [ brain.StdLegPos[legNo].concat() ];	// basePosからの相対位置
+		this.anklePos = [ 0,0,0,0 ];						// basePosからの相対位置
+		this.kneePos = [ 0,0,0,0 ];							// basePosからの相対位置
+		this.rotate = [ 0,0,0,0,0,0 ];						// LegSet全体の回転角
+		this.scale = [ 1,1,1,0 ];
+		this.shader = shader;
+		//this.State = StateW;								// 市の移動モード(State)
 		
-		PhoenixFoot[0] = new fDWL.R4D.Pylams4D(
-			gl,
-			triangleShader.prg,
-			pos,		// pos
-			PhoenixRotate,		// rotate
-			[ PhoenixFoot_SCALE, PhoenixFoot_SCALE, PhoenixFoot_SCALE, PhoenixFoot_SCALE ],
-			[	// vertex
-				0,2,0,0, 0,0,3,0, 0.5,3,0,0, -0.5,3,0,0, 0,3,0,0.5, 0,3,0,-0.5,				// 0-5
-				0,0,4,0, 0,3,0,0,   1,0,3,0,   -1,0,3,0, 0,0,3,1,   0,0,3,-1,				// 6-11
-				0,1,2,0, 0,0,1,0,   1,0,3,0,   -1,0,3,0, 0,0,3,1,   0,0,3,-1,				// 12-17
-				0,0,0,0, 0,0.5,2.5,0, 0.5,0,3,0, -0.5,0,3,0, 0,0,3,0.5, 0,0,3,-0.5,			// 18-23
-				0,0,3,0, 0,1,5,0, 0.4,0.2,5,0, -0.4,0.2,5,0, 0,0.2,5,0.4, 0,0.2,5,-0.4,		// 24-29
-				0,0,7,0, 0,1,5,0, 0.4,0.2,5,0, -0.4,0.2,5,0, 0,0.2,5,0.4, 0,0.2,5,-0.4,		// 30-35
-				0.6,0,3,0, 1,1,5,0, 1.4,0.2,5,0, 0.6,0.2,5,0, 1,0.2,5,0.4, 1,0.2,5,-0.4,	// 36-41
-				1,0,7,0, 1,1,5,0, 1.4,0.2,5,0, 0.6,0.2,5,0, 1,0.2,5,0.4, 1,0.2,5,-0.4,		// 42-47
-				-0.6,0,3,0, -1,1,5,0, -1.4,0.2,5,0, -0.6,0.2,5,0, -1,0.2,5,0.4, -1,0.2,5,-0.4,	// 48-53
-				-1,0,7,0, -1,1,5,0, -1.4,0.2,5,0, -0.6,0.2,5,0, -1,0.2,5,0.4, -1,0.2,5,-0.4,	// 54-59
-			],
-			colors,
-			centers,
-			pylamIdx,
-			chrnIdx,
-			centIdx,
-			colorIdx,
-			[ 0.38,0,locZ,0 ],							// offs: vertex生成時位置オフセット
-			[ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ]		// rot:  vertex生成時回転
-		);
-		PhoenixFoot[1] = new fDWL.R4D.Pylams4D(
-			gl,
-			triangleShader.prg,
-			pos,		// pos
-			PhoenixRotate,		// rotate
-			[ PhoenixFoot_SCALE, PhoenixFoot_SCALE, PhoenixFoot_SCALE, PhoenixFoot_SCALE ],
-			[	// vertex
-				0,2,0,0, 0,0,3,0, 0.5,3,0,0, -0.5,3,0,0, 0,3,0,0.5, 0,3,0,-0.5,				// 0-5
-				0,0,4,0, 0,3,0,0,   1,0,3,0,   -1,0,3,0, 0,0,3,1,   0,0,3,-1,				// 6-11
-				0,1,2,0, 0,0,1,0,   1,0,3,0,   -1,0,3,0, 0,0,3,1,   0,0,3,-1,				// 12-17
-				0,0,0,0, 0,0.5,2.5,0, 0.5,0,3,0, -0.5,0,3,0, 0,0,3,0.5, 0,0,3,-0.5,			// 18-23
-				0,0,3,0, 0,1,5,0, 0.4,0.2,5,0, -0.4,0.2,5,0, 0,0.2,5,0.4, 0,0.2,5,-0.4,		// 24-29
-				0,0,7,0, 0,1,5,0, 0.4,0.2,5,0, -0.4,0.2,5,0, 0,0.2,5,0.4, 0,0.2,5,-0.4,		// 30-35
-				0.6,0,3,0, 1,1,5,0, 1.4,0.2,5,0, 0.6,0.2,5,0, 1,0.2,5,0.4, 1,0.2,5,-0.4,	// 36-41
-				1,0,7,0, 1,1,5,0, 1.4,0.2,5,0, 0.6,0.2,5,0, 1,0.2,5,0.4, 1,0.2,5,-0.4,		// 42-47
-				-0.6,0,3,0, -1,1,5,0, -1.4,0.2,5,0, -0.6,0.2,5,0, -1,0.2,5,0.4, -1,0.2,5,-0.4,	// 48-53
-				-1,0,7,0, -1,1,5,0, -1.4,0.2,5,0, -0.6,0.2,5,0, -1,0.2,5,0.4, -1,0.2,5,-0.4,	// 54-59
-			],
-			colors,
-			centers,
-			pylamIdx,
-			chrnIdx,
-			centIdx,
-			colorIdx,
-			[ -0.38,0,locZ,0 ],							// offs: vertex生成時位置オフセット
-			[ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ]		// rot:  vertex生成時回転
-		);
-		PhoenixFoot[2] = new fDWL.R4D.Pylams4D(
-			gl,
-			triangleShader.prg,
-			pos,		// pos
-			PhoenixRotate,		// rotate
-			[ PhoenixFoot_SCALE, PhoenixFoot_SCALE, PhoenixFoot_SCALE, PhoenixFoot_SCALE ],
-			[	// vertex
-				0,2,0,0, 0,0,3,0, 0.5,3,0,0, -0.5,3,0,0, 0,3,0,0.5, 0,3,0,-0.5,				// 0-5
-				0,0,4,0, 0,3,0,0,   1,0,3,0,   -1,0,3,0, 0,0,3,1,   0,0,3,-1,				// 6-11
-				0,1,2,0, 0,0,1,0,   1,0,3,0,   -1,0,3,0, 0,0,3,1,   0,0,3,-1,				// 12-17
-				0,0,0,0, 0,0.5,2.5,0, 0.5,0,3,0, -0.5,0,3,0, 0,0,3,0.5, 0,0,3,-0.5,			// 18-23
-				0,0,3,0, 0,1,5,0, 0.4,0.2,5,0, -0.4,0.2,5,0, 0,0.2,5,0.4, 0,0.2,5,-0.4,		// 24-29
-				0,0,7,0, 0,1,5,0, 0.4,0.2,5,0, -0.4,0.2,5,0, 0,0.2,5,0.4, 0,0.2,5,-0.4,		// 30-35
-				0.6,0,3,0, 1,1,5,0, 1.4,0.2,5,0, 0.6,0.2,5,0, 1,0.2,5,0.4, 1,0.2,5,-0.4,	// 36-41
-				1,0,7,0, 1,1,5,0, 1.4,0.2,5,0, 0.6,0.2,5,0, 1,0.2,5,0.4, 1,0.2,5,-0.4,		// 42-47
-				-0.6,0,3,0, -1,1,5,0, -1.4,0.2,5,0, -0.6,0.2,5,0, -1,0.2,5,0.4, -1,0.2,5,-0.4,	// 48-53
-				-1,0,7,0, -1,1,5,0, -1.4,0.2,5,0, -0.6,0.2,5,0, -1,0.2,5,0.4, -1,0.2,5,-0.4,	// 54-59
-			],
-			colors,
-			centers,
-			pylamIdx,
-			chrnIdx,
-			centIdx,
-			colorIdx,
-			[ 0,0,locZ,0.35 ],							// offs: vertex生成時位置オフセット
-			[ 0.0, 0.0, 0.0, 0.0, Math.PI/2, 0.0 ]		// rot:  vertex生成時回転
-		);
-		PhoenixFoot[3] = new fDWL.R4D.Pylams4D(
-			gl,
-			triangleShader.prg,
-			pos,		// pos
-			PhoenixRotate,		// rotate
-			[ PhoenixFoot_SCALE, PhoenixFoot_SCALE, PhoenixFoot_SCALE, PhoenixFoot_SCALE ],
-			[	// vertex
-				0,2,0,0, 0,0,3,0, 0.5,3,0,0, -0.5,3,0,0, 0,3,0,0.5, 0,3,0,-0.5,				// 0-5
-				0,0,4,0, 0,3,0,0,   1,0,3,0,   -1,0,3,0, 0,0,3,1,   0,0,3,-1,				// 6-11
-				0,1,2,0, 0,0,1,0,   1,0,3,0,   -1,0,3,0, 0,0,3,1,   0,0,3,-1,				// 12-17
-				0,0,0,0, 0,0.5,2.5,0, 0.5,0,3,0, -0.5,0,3,0, 0,0,3,0.5, 0,0,3,-0.5,			// 18-23
-				0,0,3,0, 0,1,5,0, 0.4,0.2,5,0, -0.4,0.2,5,0, 0,0.2,5,0.4, 0,0.2,5,-0.4,		// 24-29
-				0,0,7,0, 0,1,5,0, 0.4,0.2,5,0, -0.4,0.2,5,0, 0,0.2,5,0.4, 0,0.2,5,-0.4,		// 30-35
-				0.6,0,3,0, 1,1,5,0, 1.4,0.2,5,0, 0.6,0.2,5,0, 1,0.2,5,0.4, 1,0.2,5,-0.4,	// 36-41
-				1,0,7,0, 1,1,5,0, 1.4,0.2,5,0, 0.6,0.2,5,0, 1,0.2,5,0.4, 1,0.2,5,-0.4,		// 42-47
-				-0.6,0,3,0, -1,1,5,0, -1.4,0.2,5,0, -0.6,0.2,5,0, -1,0.2,5,0.4, -1,0.2,5,-0.4,	// 48-53
-				-1,0,7,0, -1,1,5,0, -1.4,0.2,5,0, -0.6,0.2,5,0, -1,0.2,5,0.4, -1,0.2,5,-0.4,	// 54-59
-			],
-			colors,
-			centers,
-			pylamIdx,
-			chrnIdx,
-			centIdx,
-			colorIdx,
-			[ 0,0,locZ,-0.35 ],							// offs: vertex生成時位置オフセット
-			[ 0.0, 0.0, 0.0, 0.0, -Math.PI/2, 0.0 ]		// rot:  vertex生成時回転
-		);
-		// シェーディングルーチン選択
-//		PhoenixFoot[0].setTriangle = PhoenixFoot[0].setTriangleGouraud;
-		PhoenixFoot[0].setTriangle = PhoenixFoot[0].setTriangleFlat;
-		PhoenixFoot[0].getNormal = PhoenixFoot[0].getNormalVertex;
-		PhoenixFoot[0].getColor = PhoenixFoot[0].getColorPlane;
-//		PhoenixFoot[1].setTriangle = PhoenixFoot[1].setTriangleGouraud;
-		PhoenixFoot[1].setTriangle = PhoenixFoot[1].setTriangleFlat;
-		PhoenixFoot[1].getNormal = PhoenixFoot[1].getNormalVertex;
-		PhoenixFoot[1].getColor = PhoenixFoot[1].getColorPlane;
-//		PhoenixFoot[2].setTriangle = PhoenixFoot[2].setTriangleGouraud;
-		PhoenixFoot[2].setTriangle = PhoenixFoot[2].setTriangleFlat;
-		PhoenixFoot[2].getNormal = PhoenixFoot[2].getNormalVertex;
-		PhoenixFoot[2].getColor = PhoenixFoot[2].getColorPlane;
-//		PhoenixFoot[3].setTriangle = PhoenixFoot[3].setTriangleGouraud;
-		PhoenixFoot[3].setTriangle = PhoenixFoot[3].setTriangleFlat;
-		PhoenixFoot[3].getNormal = PhoenixFoot[3].getNormalVertex;
-		PhoenixFoot[3].getColor = PhoenixFoot[3].getColorPlane;
-		// 初期化変換
-		PhoenixFoot[0].transform();
-		PhoenixFoot[0].setTriBuffer( TriBuffer );
-		PhoenixFoot[1].transform();
-		PhoenixFoot[1].setTriBuffer( TriBuffer );
-		PhoenixFoot[2].transform();
-		PhoenixFoot[2].setTriBuffer( TriBuffer );
-		PhoenixFoot[3].transform();
-		PhoenixFoot[3].setTriBuffer( TriBuffer );
-	}());
+		this.Base  = new fDWL.D4D.Sphere4D( gl, [ 0,0,0,0 ], [ 0,0,0,0,0,0 ], 8, 8, 0.2, [ 0.8, 0.8, 1.0, 1.0 ], shader );
+		this.Knee  = new fDWL.D4D.Sphere4D( gl, [ 0,0,0,0 ], [ 0,0,0,0,0,0 ], 8, 8, 0.2, [ 0.8, 0.8, 1.0, 1.0 ], shader );
+		this.Ankle = new fDWL.D4D.Sphere4D( gl, [ 0,0,0,0 ], [ 0,0,0,0,0,0 ], 8, 8, 0.2, [ 0.8, 0.8, 1.0, 1.0 ], shader );
 /**/
-
+		this.UpperLeg = new fDWL.R4D.Pylams4D(
+			gl,
+			shader.prg,
+			[ 0,0,0,0 ],									// pos
+			[ 0,0,0,0,0,0 ],								// rotate
+			[ 1,1,1,1 ],
+			[ // Vertice
+				-0.1,  1, 0.1,  0.1,   0.1,  1, 0.1,  0.1,   -0.1,  1, -0.1,  0.1,    0.1,  1, -0.1,  0.1,
+				 0.1, -1, 0.1,  0.1,  -0.1, -1, 0.1,  0.1,    0.1, -1, -0.1,  0.1,   -0.1, -1, -0.1,  0.1,
+				-0.1,  1, 0.1, -0.1,   0.1,  1, 0.1, -0.1,   -0.1,  1, -0.1, -0.1,    0.1,  1, -0.1, -0.1,
+				 0.1, -1, 0.1, -0.1,  -0.1, -1, 0.1, -0.1,    0.1, -1, -0.1, -0.1,   -0.1, -1, -0.1, -0.1
+			],
+			// color
+			[ 192, 192, 192, 255 ],
+			// center
+			[ 0, 0, 0, 0 ],
+			[	// index of Pylamids
+				 0, 1, 2, 5,  1, 2, 3, 6,   4, 5, 6, 1,   5, 6, 7, 2,   1, 2, 5, 6,		// こっち(h=+1)
+				 8, 9,10,13,  9,10,11,14,  12,13,14, 9,  13,14,15,10,   9,10,13,14,		// あっち(h=-1)
+				 9, 1,11,12,  1,11, 3, 6,   4,12, 6, 1,  11, 6,12,14,   1,11, 6,12,		// 右(X=+1)
+				 0, 8, 2, 5,  8, 2,10,15,   5,13,15, 8,   5, 7,15, 2,   2, 8, 5,15,		// 左(X=-1)
+				 0, 1, 8, 5,  1, 8, 9,12,   5, 4,12, 1,   5,12,13, 8,   1, 8, 5,12,		// 上(Y=+1)
+				 2,10,11,15,  2, 3,11, 6,  15,14, 6,11,  15, 6, 7, 2,   2,11, 6,15,		// 下(Y=-1)
+			],
+			[	// chrnIdx: 各五胞体の構成頂点index
+				// 元無し
+			],
+			[	// centIdx
+				0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
+				0,0,0,0,0, 0,0,0,0,0
+			],
+			[	// color index of pylamid
+				0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
+				0,0,0,0,0, 0,0,0,0,0
+			],
+			[ 0, 1, 0, 0 ],				// offs: vertex生成時位置オフセット
+			[ 0, 0, 0, 0, 0, 0 ]		// rot:  vertex生成時回転
+		);
+/**/
+		this.LowerLeg = new fDWL.R4D.Pylams4D(
+			gl,
+			shader.prg,
+			[ 0, 0, 0, 0 ],								// pos
+			[ 0,0,0,0,0,0 ],							// rotate
+			[ 1, 1, 1, 1 ],
+			[ // Vertice
+				-0.1,  1, 0.1,  0.1,   0.1,  1, 0.1,  0.1,   -0.1,  1, -0.1,  0.1,    0.1,  1, -0.1,  0.1,
+				 0.1, -1, 0.1,  0.1,  -0.1, -1, 0.1,  0.1,    0.1, -1, -0.1,  0.1,   -0.1, -1, -0.1,  0.1,
+				-0.1,  1, 0.1, -0.1,   0.1,  1, 0.1, -0.1,   -0.1,  1, -0.1, -0.1,    0.1,  1, -0.1, -0.1,
+				 0.1, -1, 0.1, -0.1,  -0.1, -1, 0.1, -0.1,    0.1, -1, -0.1, -0.1,   -0.1, -1, -0.1, -0.1
+			],
+			// color
+			[ 192, 192, 192, 255 ],
+			// center
+			[ 0, 0, 0, 0 ],
+			[	// index of Pylamids
+				 0, 1, 2, 5,  1, 2, 3, 6,   4, 5, 6, 1,   5, 6, 7, 2,   1, 2, 5, 6,		// こっち(h=+1)
+				 8, 9,10,13,  9,10,11,14,  12,13,14, 9,  13,14,15,10,   9,10,13,14,		// あっち(h=-1)
+				 9, 1,11,12,  1,11, 3, 6,   4,12, 6, 1,  11, 6,12,14,   1,11, 6,12,		// 右(X=+1)
+				 0, 8, 2, 5,  8, 2,10,15,   5,13,15, 8,   5, 7,15, 2,   2, 8, 5,15,		// 左(X=-1)
+				 0, 1, 8, 5,  1, 8, 9,12,   5, 4,12, 1,   5,12,13, 8,   1, 8, 5,12,		// 上(Y=+1)
+				 2,10,11,15,  2, 3,11, 6,  15,14, 6,11,  15, 6, 7, 2,   2,11, 6,15,		// 下(Y=-1)
+			],
+			[	// chrnIdx: 各五胞体の構成頂点index
+				// 元無し
+			],
+			[	// centIdx
+				0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
+				0,0,0,0,0, 0,0,0,0,0
+			],
+			[	// color index of pylamid
+				0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
+				0,0,0,0,0, 0,0,0,0,0
+			],
+			[ 0, 1, 0, 0 ],				// offs: vertex生成時位置オフセット
+			[ 0, 0, 0, 0, 0, 0 ]		// rot:  vertex生成時回転
+		);		
+		this.Foot = new fDWL.R4D.Pylams4D(
+			gl,
+			shader.prg,
+			[ 0, 0, 0, 0 ],								// pos
+			[ 0,0,0,0,0,0 ],							// rotate
+			[ 1, 1, 1, 1 ],
+			[ // Vertice
+				-0.3, 0.1,  0.3,  0.3,   0.3, 0.1,  0.3,  0.3,   -0.3, -0.1,  0.3,  0.3,    0.3, -0.1,  0.3,  0.3,
+				 0.3, 0.1, -0.3,  0.3,  -0.3, 0.1, -0.3,  0.3,    0.3, -0.1, -0.3,  0.3,   -0.3, -0.1, -0.3,  0.3,
+				-0.3, 0.1,  0.3, -0.3,   0.3, 0.1,  0.3, -0.3,   -0.3, -0.1,  0.3, -0.3,    0.3, -0.1,  0.3, -0.3,
+				 0.3, 0.1, -0.3, -0.3,  -0.3, 0.1, -0.3, -0.3,    0.3, -0.1, -0.3, -0.3,   -0.3, -0.1, -0.3, -0.3
+			],
+			// color
+			[ 192, 192, 192, 255 ],
+			// center
+			[ 0, 0, 0, 0 ],
+			[	// index of Pylamids
+				 0, 1, 2, 5,  1, 2, 3, 6,   4, 5, 6, 1,   5, 6, 7, 2,   1, 2, 5, 6,		// こっち(h=+1)
+				 8, 9,10,13,  9,10,11,14,  12,13,14, 9,  13,14,15,10,   9,10,13,14,		// あっち(h=-1)
+				 9, 1,11,12,  1,11, 3, 6,   4,12, 6, 1,  11, 6,12,14,   1,11, 6,12,		// 右(X=+1)
+				 0, 8, 2, 5,  8, 2,10,15,   5,13,15, 8,   5, 7,15, 2,   2, 8, 5,15,		// 左(X=-1)
+				 0, 1, 8, 5,  1, 8, 9,12,   5, 4,12, 1,   5,12,13, 8,   1, 8, 5,12,		// 上(Y=+1)
+				 2,10,11,15,  2, 3,11, 6,  15,14, 6,11,  15, 6, 7, 2,   2,11, 6,15,		// 下(Y=-1)
+				 0, 1, 2, 8,  1, 2, 3,11,   8, 9,11, 1,   8,11,10, 2,   1, 2, 8,11,		// 手前(Z=+1)
+				13,12,15, 5, 12,15,14, 6,   5, 4, 6,12,   5, 6, 7,15,  12,15, 5, 6		// 奥(Z=-1)
+			],
+			[	// chrnIdx: 各五胞体の構成頂点index
+				// 元無し
+			],
+			[	// centIdx
+				0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
+				0,0,0,0,0, 0,0,0,0,0
+			],
+			[	// color index of pylamid
+				0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
+				0,0,0,0,0, 0,0,0,0,0
+			],
+			[ 0, -0.1, 0, 0 ],				// offs: vertex生成時位置オフセット
+			[ 0, 0, 0, 0, 0, 0 ]		// rot:  vertex生成時回転
+		);		
+/**/
+		// 足の長さを指定
+		this.UpperLeg.legLen = 2.0;
+		this.LowerLeg.legLen = 2.0;
+		
+	}
+	LegSet.prototype = {
+		
+		initParts:	function( primBuffer ){
+			// シェーディングルーチン選択
+			this.UpperLeg.setTriangle = this.UpperLeg.setTriangleFlat;
+			this.UpperLeg.getNormal = this.UpperLeg.getNormalPlane;
+			this.UpperLeg.getColor = this.UpperLeg.getColorPlane;
+			this.LowerLeg.setTriangle = this.UpperLeg.setTriangleFlat;
+			this.LowerLeg.getNormal = this.UpperLeg.getNormalPlane;
+			this.LowerLeg.getColor = this.UpperLeg.getColorPlane;
+			this.Foot.setTriangle = this.UpperLeg.setTriangleFlat;
+			this.Foot.getNormal = this.UpperLeg.getNormalPlane;
+			this.Foot.getColor = this.UpperLeg.getColorPlane;
+			// 初期化変換
+			this.UpperLeg.transform();
+			this.UpperLeg.setTriBuffer( primBuffer );
+			this.LowerLeg.transform();
+			this.LowerLeg.setTriBuffer( primBuffer );
+			this.Foot.transform();
+			this.Foot.setTriBuffer( primBuffer );
+			
+			
+		},
+		
+		setPos: function( pos ){
+			this.pos = pos;
+		},
+		
+		// 関節位置変更実験
+		walk: function( pos, wkrRot, dist ){
+			
+			// 基点と上腿
+			//this.basePos = [ 0,0,0,0 ];
+			// 足と下腿
+			this.anklePos = this.calcAnklePos( dist );
+			// 膝位置
+			this.kneePos  = this.calcKneePos();
+			
+			
+			let rotUpper = this.calcRotate( this.basePos,  this.anklePos, wkrRot );
+			let rotLower = rotUpper.concat();
+/*
+			for( let idx = 0; idx < rotLower.length; ++idx ){
+				rotLower[idx] += Math.PI;
+				if( rotLower[idx] > Math.PI*2 ){
+					rotLower[idx] -= Math.PI*2;
+				}
+			}
+*/
+			rotUpper[1] = this.calcRotateYZ( this.basePos,  this.kneePos, this.UpperLeg.legLen );
+			rotLower[1] = this.calcRotateYZ( this.anklePos, this.kneePos, this.LowerLeg.legLen );
+			
+			// 本体の位置と角度を反映
+			this.pos = pos;
+			
+//			let rotUpr = this.UpperLeg.getRotate();
+//			rotUpr[1] = rotUpper;
+//			this.UpperLeg.setRotate( rotUpr );
+			this.UpperLeg.setRotate( rotUpper );
+			
+//			let rotLwr = this.LowerLeg.getRotate();
+//			rotLwr[1] = rotLower;
+//			this.LowerLeg.setRotate( rotLwr );
+			this.LowerLeg.setRotate( rotLower );
+		},
+		
+		// 踝の位置を算出：仮
+		calcAnklePos: function( var0 ){
+			
+			
+			
+//			let anklePos = [ 0,-0.5,var0,0 ];
+			let anklePos = [ var0/2,-0.5,2,0 ];
+			
+			
+			return anklePos;
+		},
+		
+		// 膝の座標と足の傾きを計算
+		calcKneePos: function(){
+			// まずはbasePos[1]=anklePos[1]の場合を算出
+			const L02 = this.UpperLeg.legLen*this.UpperLeg.legLen;
+			const L12 = this.LowerLeg.legLen*this.LowerLeg.legLen;
+			// 距離計算は手抜きできない
+			const anklePos = this.anklePos;
+			const basePos = this.basePos;
+			const difV = [ anklePos[0]-basePos[0], anklePos[1]-basePos[1], anklePos[2]-basePos[2], anklePos[3]-basePos[3] ];
+			const D2 = 	difV[0]*difV[0]+difV[1]*difV[1]+difV[2]*difV[2]+difV[3]*difV[3];
+			const Dst = Math.sqrt( D2 );
+			const DD = Math.sqrt( D2-difV[1]*difV[1] );
+			let dist = (D2+L02-L12)/(2*Dst);
+			let height = Math.sqrt( L02 - dist*dist );
+			const MINIMUM_Y = 0.01;
+			if(( difV[1] < -MINIMUM_Y )||( MINIMUM_Y < difV[1] )){
+				// 付け根と踝の高度差が大きければ調整
+				const sinYZ = -difV[1]/Dst;
+				const cosYZ = DD/Dst;
+				const newDist   =  dist*cosYZ+height*sinYZ;
+				const newHeight = -dist*sinYZ+height*cosYZ;
+				dist =  newDist;
+				height = newHeight;
+			}
+			let kneePos = basePos.concat();
+			const rate = dist/Dst;
+			kneePos[0] += rate*difV[0];
+			kneePos[1] += height;
+			kneePos[2] += rate*difV[2];
+			kneePos[3] += rate*difV[3];
+			
+			return kneePos;
+		},
+		
+		// 基準点２つから傾きを算出：脚の伸び縮み方向
+		calcRotateYZ: function( srcPos, dstPos, legLen ){
+			const height = dstPos[1]-srcPos[1];
+			const ang = Math.PI/2 -Math.asin( height/legLen );
+			return ( dstPos[2] > srcPos[2] )?ang:-ang;
+		},
+		// 横方向への回転角を求める
+		calcRotate: function( srcPos, dstPos, wkrRot ){
+			let rotate = wkrRot.concat();
+			// xz平面の回転を求める
+			const difX = dstPos[0]-srcPos[0];
+			const difZ = dstPos[2]-srcPos[2];
+			let xz = Math.atan2( difZ, difX );
+			// 方向調整
+			xz += Math.PI*3/2;
+			rotate[5] += xz;
+			if( rotate[5] > Math.PI*2 ){
+				rotate[5] -= Math.PI*2;
+			}
+			// xh平面
+			
+			
+			// zh平面
+			
+			
+			return rotate;			// [ xy, yz, yh, zh, xh, xz ]
+		},
+		
+		// 描画
+		draw:	function( isRedraw, hPos, viewProjMtx, shaderParam ){
+			// 各パーツに座標・角度を設定
+			let basePos = this.basePos.concat();
+			basePos[0] += this.pos[0], basePos[1] += this.pos[1], basePos[2] += this.pos[2], basePos[3] += this.pos[3];
+			this.Base.setPos( basePos );
+			this.UpperLeg.setPos( basePos );
+			let anklePos = this.anklePos.concat();
+			anklePos[0] += this.pos[0], anklePos[1] += this.pos[1], anklePos[2] += this.pos[2], anklePos[3] += this.pos[3];
+			this.Ankle.setPos( anklePos );
+			this.Foot.setPos( anklePos );
+			this.LowerLeg.setPos( anklePos );
+			let kneePos = this.kneePos.concat();
+			kneePos[0] += this.pos[0], kneePos[1] += this.pos[1], kneePos[2] += this.pos[2], kneePos[3] += this.pos[3];
+			this.Knee.setPos( kneePos );
+			
+			// 描画
+			if( isRedraw ){
+				this.UpperLeg.transform();
+				this.UpperLeg.dividePylams( hPos );
+				this.LowerLeg.transform();
+				this.LowerLeg.dividePylams( hPos );
+				this.Foot.transform();
+				this.Foot.dividePylams( hPos );
+				
+			}
+/**/
+			this.Base.prepDraw( hPos, viewProjMtx, shaderParam );
+			this.Base.draw( this.shader );
+			this.Knee.prepDraw( hPos, viewProjMtx, shaderParam );
+			this.Knee.draw( this.shader );
+			this.Ankle.prepDraw( hPos, viewProjMtx, shaderParam );
+			this.Ankle.draw( this.shader );
+/**/
+		},
+	}
+	
+/*	// 仮の脚
+	let LegZero = new LegSet( 0, [ 0,0,0,Phoenix_OffsH ], [ 0,0,0,0,0,0 ], triangleShader, 0 );
+	LegZero.initParts( TriBuffer );
+/**/
+	
+	
+	// 
+	let WalkerOne = function( gl, pos, rotate, shader ){
+		this.pos = pos;
+		this.rot = rotate;
+		this.scale = [ 1,1,1,1 ];
+		this.shader = shader;
+		this.localMtx = new fDWL.R4D.Matrix4();
+		
+		// 胴体部分
+		this.Body = new fDWL.R4D.Pylams4D(
+			gl,
+			shader.prg,
+			[ 0, 0, 0, 0 ],			// pos
+			this.rot.concat(),									// rotate
+			[ WalkerBody_SCALE, WalkerBody_SCALE, WalkerBody_SCALE, WalkerBody_SCALE ],
+			[ // Vertice
+				-0.5, 0.5,  0.5,  0.5,   0.5, 0.5,  0.5,  0.5,   -0.5, -0.5,  0.5,  0.5,    0.5, -0.5,  0.5,  0.5,
+				 0.5, 0.5, -0.5,  0.5,  -0.5, 0.5, -0.5,  0.5,    0.5, -0.5, -0.5,  0.5,   -0.5, -0.5, -0.5,  0.5,
+				-0.5, 0.5,  0.5, -0.5,   0.5, 0.5,  0.5, -0.5,   -0.5, -0.5,  0.5, -0.5,    0.5, -0.5,  0.5, -0.5,
+				 0.5, 0.5, -0.5, -0.5,  -0.5, 0.5, -0.5, -0.5,    0.5, -0.5, -0.5, -0.5,   -0.5, -0.5, -0.5, -0.5
+			],
+			// color
+			[ 192, 192, 192, 255 ],
+			// center
+			[ 0, 0, 0, 0 ],
+			[	// index of Pylamids
+				 0, 1, 2, 5,  1, 2, 3, 6,   4, 5, 6, 1,   5, 6, 7, 2,   1, 2, 5, 6,		// こっち(h=+1)
+				 8, 9,10,13,  9,10,11,14,  12,13,14, 9,  13,14,15,10,   9,10,13,14,		// あっち(h=-1)
+				 9, 1,11,12,  1,11, 3, 6,   4,12, 6, 1,  11, 6,12,14,   1,11, 6,12,		// 右(X=+1)
+				 0, 8, 2, 5,  8, 2,10,15,   5,13,15, 8,   5, 7,15, 2,   2, 8, 5,15,		// 左(X=-1)
+				 0, 1, 8, 5,  1, 8, 9,12,   5, 4,12, 1,   5,12,13, 8,   1, 8, 5,12,		// 上(Y=+1)
+				 2,10,11,15,  2, 3,11, 6,  15,14, 6,11,  15, 6, 7, 2,   2,11, 6,15,		// 下(Y=-1)
+				 0, 1, 2, 8,  1, 2, 3,11,   8, 9,11, 1,   8,11,10, 2,   1, 2, 8,11,		// 手前(Z=+1)
+				13,12,15, 5, 12,15,14, 6,   5, 4, 6,12,   5, 6, 7,15,  12,15, 5, 6		// 奥(Z=-1)
+			],
+			[	// chrnIdx: 各五胞体の構成頂点index
+				// 元無し
+			],
+			[	// centIdx
+				0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
+				0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0
+			],
+			[	// color index of pylamid
+				0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 
+				0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0
+			],
+			[ 0, 0, 0, 0 ],				// offs: vertex生成時位置オフセット
+			[ 0, 0, 0, 0, 0, 0 ]		// rot:  vertex生成時回転
+		);
+		this.BodyPlace = [ 0,0,0,0 ];	// 基準位置
+		this.BodyPos = [ 0,0,0,0 ];		// ローカル座標変換結果
+		
+		// 頭部＆顔
+		this.Head = new fDWL.D4D.Sphere4D( gl, [ 0, 0, 0, 0 ], [ 0,0,0,0,0,0 ], 16, 16, 0.5, [ 0.7, 0.7, 0.7, 1.0 ], shader );
+		this.Face = new fDWL.D4D.Sphere4D( gl, [ 0, 0, 0, 0 ], [ 0,0,0,0,0,0 ],  8,  8, 0.3, [ 1.0, 0.7, 0.7, 1.0 ], shader );
+		this.HeadPlace = [ 0, 0.8,  0.0, 0 ];	// 基準位置
+		this.HeadPos = [ 0,0,0,0 ];				// ローカル座標変換結果
+		this.FacePlace = [ 0, 0.8, -0.5, 0 ];	// 基準位置
+		this.FacePos = [ 0,0,0,0 ];				// ローカル座標変換結果
+		
+		// 脚部
+		this.Legs = [];
+		this.LegPlace = [
+			[ 0.5,LegBaseHeight,0.5,0 ], [ 0,0,0,0 ], [ 0,0,0,0 ], [ 0,0,0,0 ],
+			[ 0,0,0,0 ], [ 0,0,0,0 ], [ 0,0,0,0 ], [ 0,0,0,0 ]
+		];
+		this.LegPos = [];
+		for( let idx = 0; idx < LEG_NUM; ++idx ){
+			
+			this.Legs[idx] = new LegSet( idx, this.LegPlace[idx], [ 0,0,0,0,0,0 ], triangleShader, 0 );
+		}
+		
+	}
+	
+	WalkerOne.prototype = {
+		initParts:	function( primBuffer ){
+			// シェーディングルーチン選択
+			this.Body.setTriangle = this.Body.setTriangleFlat;
+			this.Body.getNormal = this.Body.getNormalPlane;
+			this.Body.getColor = this.Body.getColorPlane;
+			// 初期化変換
+			this.Body.transform();
+			this.Body.setTriBuffer( primBuffer );
+			
+			for( let idx = 0; idx < LEG_NUM; ++idx ){
+				this.Legs[idx].initParts( primBuffer );
+			}
+		},
+		
+		setRotate:	function( rotate ){
+			this.rot = rotate;
+		},
+		getRotate: function(){
+			return this.rot.concat();
+		},
+		
+		calcRotMtx:	function(){
+			// ローカル変換行列の作成
+			let mx4Rots = [
+					new fDWL.R4D.Matrix4(),
+					new fDWL.R4D.Matrix4(),
+					new fDWL.R4D.Matrix4(),
+					new fDWL.R4D.Matrix4(),
+					new fDWL.R4D.Matrix4(),
+					new fDWL.R4D.Matrix4()
+				];
+			for( let idx = 0; idx < 6; ++idx ){
+				mx4Rots[idx].makeRot( idx, this.rot[idx] );
+			}
+			let mx4Scale = new fDWL.R4D.Matrix4();
+			mx4Scale.makeScale( this.scale );
+			// 各Matrixの合成
+			this.localMtx = mx4Scale.
+					mul( mx4Rots[5] ).
+					mul( mx4Rots[4] ).
+					mul( mx4Rots[3] ).
+					mul( mx4Rots[2] ).
+					mul( mx4Rots[1] ).
+					mul( mx4Rots[0] );
+		},
+		
+		walk:	function( var0 ){
+			
+			// 変換行列作成
+			this.calcRotMtx();
+			
+			// 各ローカル基準点の変換
+			this.BodyPos = this.localMtx.mulVec( this.BodyPlace[0], this.BodyPlace[1], this.BodyPlace[2], this.BodyPlace[3] );
+			this.HeadPos = this.localMtx.mulVec( this.HeadPlace[0], this.HeadPlace[1], this.HeadPlace[2], this.HeadPlace[3] );
+			this.FacePos = this.localMtx.mulVec( this.FacePlace[0], this.FacePlace[1], this.FacePlace[2], this.FacePlace[3] );
+			for( let idx = 0; idx < LEG_NUM; ++idx ){
+				this.LegPos[idx] = this.localMtx.mulVec( this.LegPlace[idx][0], this.LegPlace[idx][1], this.LegPlace[idx][2], this.LegPlace[idx][3] );
+				this.LegPos[idx][0] += this.pos[0];
+				this.LegPos[idx][1] += this.pos[1];
+				this.LegPos[idx][2] += this.pos[2];
+				this.LegPos[idx][3] += this.pos[3];
+				this.Legs[idx].walk( this.LegPos[idx], this.rot.concat(), var0 );
+			}
+		},
+		
+		draw:	function( isRedraw, hPos, viewProjMtx, shaderParam ){
+			if( isRedraw ){
+				let bodyPos = [ this.pos[0]+this.BodyPos[0], this.pos[1]+this.BodyPos[1], this.pos[2]+this.BodyPos[2], this.pos[3]+this.BodyPos[3] ];
+				this.Body.setPos( bodyPos );
+				this.Body.setRotate( this.rot.concat() );
+				this.Body.transform();
+				this.Body.dividePylams( hPos );
+			}
+			let headPos = [ this.pos[0]+this.HeadPos[0], this.pos[1]+this.HeadPos[1], this.pos[2]+this.HeadPos[2], this.pos[3]+this.HeadPos[3] ];
+			this.Head.setPos( headPos );
+			this.Head.setRotate( this.rot );
+			this.Head.prepDraw( hPos, viewProjMtx, shaderParam );
+			this.Head.draw( this.shader );
+			let facePos = [ this.pos[0]+this.FacePos[0], this.pos[1]+this.FacePos[1], this.pos[2]+this.FacePos[2], this.pos[3]+this.FacePos[3] ];
+			this.Face.setPos( facePos );
+			this.Face.setRotate( this.rot );
+			this.Face.prepDraw( hPos, viewProjMtx, shaderParam );
+			this.Face.draw( this.shader );
+			for( let idx = 0; idx < LEG_NUM; ++idx ){
+				this.Legs[idx].draw( isRedraw, hPos, viewProjMtx, shaderParam );
+			}
+		}
+	}
+	
+	let Walker = new WalkerOne( gl, [ 0,1.2,0,Phoenix_OffsH ], [ 0,0,0,0,0,0 ], triangleShader );
+	Walker.initParts( TriBuffer );
+	
 	
 	// テクスチャ無し地面
 	EquinoxFloor.Data = fDWL.tiledFloor( 1.0, 16, [0.1, 0.1, 0.1, 1.0], [1.0, 1.0, 1.0, 1.0 ] );
@@ -805,6 +724,7 @@ function phoenixGr(){
 	cntrls.RotZH = document.getElementById('RotZH');
 	cntrls.RotXH = document.getElementById('RotXH');
 	cntrls.RotXZ = document.getElementById('RotXZ');
+	cntrls.Dist = document.getElementById('Dist');
 	
 	cntrls.RotXYTxt = document.getElementById('RotXYTxt');
 	cntrls.RotYZTxt = document.getElementById('RotYZTxt');
@@ -812,6 +732,7 @@ function phoenixGr(){
 	cntrls.RotZHTxt = document.getElementById('RotZHTxt');
 	cntrls.RotXHTxt = document.getElementById('RotXHTxt');
 	cntrls.RotXZTxt = document.getElementById('RotXZTxt');
+	cntrls.DistTxt = document.getElementById('DistTxt');
 	
 	cntrls.oldHPos = (-100);
 	cntrls.oldHPosBox = cntrls.eHPos.value;
@@ -822,6 +743,7 @@ function phoenixGr(){
 	cntrls.RotZH.old = cntrls.RotZH.value;
 	cntrls.RotXH.old = cntrls.RotXH.value;
 	cntrls.RotXZ.old = cntrls.RotXZ.value;
+	cntrls.Dist.old = cntrls.Dist.value;
 	
 	cntrls.RotXYTxt.old = cntrls.RotXY.value;
 	cntrls.RotYZTxt.old = cntrls.RotYZ.value;
@@ -829,8 +751,9 @@ function phoenixGr(){
 	cntrls.RotZHTxt.old = cntrls.RotZH.value;
 	cntrls.RotXHTxt.old = cntrls.RotXH.value;
 	cntrls.RotXZTxt.old = cntrls.RotXZ.value;
+	cntrls.DistTxt.old = cntrls.DistTxt.value;
 	
-	cntrls.radioList = document.getElementsByName("shadeType");
+	cntrls.wkrPos = [ 0,0,0,0 ];
 	
 	draw();
 	
@@ -861,30 +784,32 @@ function phoenixGr(){
 				speed *= 2;
 			}
 			moveXZ.vel = 0.0;
-			if( keyStatus[0] ){
-				if( keyStatus[4] ){	// shift
-					views.height = ( views.height > 3.9 )?4:(views.height+0.1);
-				}else{
-					moveXZ.vel = speed;
+			if( !keyStatus[6] ){
+				if( keyStatus[0] ){
+					if( keyStatus[4] ){	// shift
+						views.height = ( views.height > 3.9 )?4:(views.height+0.1);
+					}else{
+						moveXZ.vel = speed;
+					}
 				}
-			}
-			if( keyStatus[1] ){
-				if( keyStatus[4] ){	// shift
-					views.height = ( views.height < 0.1 )?0:(views.height-0.1);
-				}else{
-					moveXZ.vel = -speed;
+				if( keyStatus[1] ){
+					if( keyStatus[4] ){	// shift
+						views.height = ( views.height < 0.1 )?0:(views.height-0.1);
+					}else{
+						moveXZ.vel = -speed;
+					}
 				}
-			}
-			if( keyStatus[2] ){
-				moveXZ.rot -= ROT_RATE;
-				if( moveXZ.rot > Math.PI*2 ){
-					moveXZ.rot -= Math.PI*2;
+				if( keyStatus[2] ){
+					moveXZ.rot -= ROT_RATE;
+					if( moveXZ.rot > Math.PI*2 ){
+						moveXZ.rot -= Math.PI*2;
+					}
 				}
-			}
-			if( keyStatus[3] ){
-				moveXZ.rot += ROT_RATE;
-				if( moveXZ.rot < 0 ){
-					moveXZ.rot += Math.PI*2;
+				if( keyStatus[3] ){
+					moveXZ.rot += ROT_RATE;
+					if( moveXZ.rot < 0 ){
+						moveXZ.rot += Math.PI*2;
+					}
 				}
 			}
 			// 移動偏差
@@ -908,6 +833,7 @@ function phoenixGr(){
 		}());
 		
 		// 入力ボックス：変更適用
+		let isRedraw = false;
 		if( cntrls.eHPos.value !== cntrls.oldHPos ){
 			cntrls.eHPosBox.value = cntrls.eHPos.value;
 		}else
@@ -949,28 +875,14 @@ function phoenixGr(){
 		}else
 		if( cntrls.RotXZTxt.old !== cntrls.RotXZTxt.value ){
 			cntrls.RotXZ.value = cntrls.RotXZTxt.value;
-		}
-		// ラジオボタン
-		if( cntrls.shaderChanged ){
-			if( cntrls.isGouraud ){
-				cntrls.radioList[0].checked = false;
-				cntrls.radioList[1].checked = true;
-			}else{
-				cntrls.radioList[0].checked = true;
-				cntrls.radioList[1].checked = false;
-			}
 		}else
-		if (cntrls.radioList[0].checked) {
-			if( cntrls.isGouraud ){
-				cntrls.isGouraud = false;
-				cntrls.shaderChanged = true;
-			}
+		if( cntrls.Dist.old !== cntrls.Dist.value ){
+			isRedraw = true;
+			cntrls.DistTxt.value = cntrls.Dist.value;
 		}else
-		if (cntrls.radioList[1].checked) {
-			if( !cntrls.isGouraud ){
-				cntrls.isGouraud = true;
-				cntrls.shaderChanged = true;
-			}
+		if( cntrls.DistTxt.old !== cntrls.DistTxt.value ){
+			isRedraw = true;
+			cntrls.Dist.value = cntrls.DistTxt.value;
 		}
 		
 		// H軸位置設定
@@ -982,8 +894,7 @@ function phoenixGr(){
 			( cntrls.RotYH.old !== cntrls.RotYH.value )||
 			( cntrls.RotZH.old !== cntrls.RotZH.value )||
 			( cntrls.RotXH.old !== cntrls.RotXH.value )||
-			( cntrls.RotXZ.old !== cntrls.RotXZ.value )||
-			( cntrls.shaderChanged === true )
+			( cntrls.RotXZ.old !== cntrls.RotXZ.value )
 		){
 			cntrls.oldHPos = (-100);
 		}
@@ -995,61 +906,16 @@ function phoenixGr(){
 		cntrls.RotZH.old = cntrls.RotZH.value;
 		cntrls.RotXH.old = cntrls.RotXH.value;
 		cntrls.RotXZ.old = cntrls.RotXZ.value;
+		cntrls.Dist.old = cntrls.Dist.value;
 		cntrls.RotXYTxt.old = cntrls.RotXYTxt.value;
 		cntrls.RotYZTxt.old = cntrls.RotYZTxt.value;
 		cntrls.RotYHTxt.old = cntrls.RotYHTxt.value;
 		cntrls.RotZHTxt.old = cntrls.RotZHTxt.value;
 		cntrls.RotXHTxt.old = cntrls.RotXHTxt.value;
 		cntrls.RotXZTxt.old = cntrls.RotXZTxt.value;
+		cntrls.DistTxt.old = cntrls.DistTxt.value;
 		if(( moveXZ.vel != 0 )||( cntrls.oldHPos != cntrls.eHPos.value )){
-			
-			// 八胞体切断体の作成
-			TriBuffer.initialize( triangleShader );
-			
-			if( cntrls.shaderChanged ){
-				cntrls.shaderChanged = false;
-				if( cntrls.isGouraud ){
-					PhoenixHead.setTriangle = PhoenixHead.setTriangleGouraud;
-					PhoenixBody.setTriangle = PhoenixBody.setTriangleGouraud;
-					PhoenixFoot[0].setTriangle = PhoenixFoot[0].setTriangleGouraud;
-					PhoenixFoot[1].setTriangle = PhoenixFoot[1].setTriangleGouraud;
-					PhoenixFoot[2].setTriangle = PhoenixFoot[2].setTriangleGouraud;
-					PhoenixFoot[3].setTriangle = PhoenixFoot[3].setTriangleGouraud;
-				}else{
-					PhoenixHead.setTriangle = PhoenixHead.setTriangleFlat;
-					PhoenixBody.setTriangle = PhoenixBody.setTriangleFlat;
-					PhoenixFoot[0].setTriangle = PhoenixFoot[0].setTriangleFlat;
-					PhoenixFoot[1].setTriangle = PhoenixFoot[1].setTriangleFlat;
-					PhoenixFoot[2].setTriangle = PhoenixFoot[2].setTriangleFlat;
-					PhoenixFoot[3].setTriangle = PhoenixFoot[3].setTriangleFlat;
-				}
-			}
-			
-/**/			// 彫像：頭部
-			PhoenixHead.setRotate( [ cntrls.RotXY.value*(0.02), cntrls.RotYZ.value*(0.02), cntrls.RotYH.value*(0.02), cntrls.RotZH.value*(0.02), cntrls.RotXH.value*(0.02), cntrls.RotXZ.value*(0.02) ] );
-			PhoenixHead.transform();
-			PhoenixHead.dividePylams( hPos );
-/**/
-			
-/**/			// 彫像：胴部
-			PhoenixBody.setRotate( [ cntrls.RotXY.value*(0.02), cntrls.RotYZ.value*(0.02), cntrls.RotYH.value*(0.02), cntrls.RotZH.value*(0.02), cntrls.RotXH.value*(0.02), cntrls.RotXZ.value*(0.02) ] );
-			PhoenixBody.transform();
-			PhoenixBody.dividePylams( hPos );
-			
-/**/			// 彫像：脚部
-			PhoenixFoot[0].setRotate( [ cntrls.RotXY.value*(0.02), cntrls.RotYZ.value*(0.02), cntrls.RotYH.value*(0.02), cntrls.RotZH.value*(0.02), cntrls.RotXH.value*(0.02), cntrls.RotXZ.value*(0.02) ] );
-			PhoenixFoot[0].transform();
-			PhoenixFoot[0].dividePylams( hPos );
-			PhoenixFoot[1].setRotate( [ cntrls.RotXY.value*(0.02), cntrls.RotYZ.value*(0.02), cntrls.RotYH.value*(0.02), cntrls.RotZH.value*(0.02), cntrls.RotXH.value*(0.02), cntrls.RotXZ.value*(0.02) ] );
-			PhoenixFoot[1].transform();
-			PhoenixFoot[1].dividePylams( hPos );
-			PhoenixFoot[2].setRotate( [ cntrls.RotXY.value*(0.02), cntrls.RotYZ.value*(0.02), cntrls.RotYH.value*(0.02), cntrls.RotZH.value*(0.02), cntrls.RotXH.value*(0.02), cntrls.RotXZ.value*(0.02) ] );
-			PhoenixFoot[2].transform();
-			PhoenixFoot[2].dividePylams( hPos );
-			PhoenixFoot[3].setRotate( [ cntrls.RotXY.value*(0.02), cntrls.RotYZ.value*(0.02), cntrls.RotYH.value*(0.02), cntrls.RotZH.value*(0.02), cntrls.RotXH.value*(0.02), cntrls.RotXZ.value*(0.02) ] );
-			PhoenixFoot[3].transform();
-			PhoenixFoot[3].dividePylams( hPos );
-/**/
+			isRedraw = true;
 		}
 		// 現hPos値の記録
 		cntrls.oldHPos = cntrls.eHPos.value;
@@ -1064,6 +930,7 @@ function phoenixGr(){
 		
 		gl.enable(gl.CULL_FACE);
 		
+/**/
 		// 地面
 		(function(){
 			"use strict";
@@ -1071,7 +938,7 @@ function phoenixGr(){
 				attL = [],
 				attS = [];
 			mat4.identity( modelMatrix );
-			mat4.translate( modelMatrix, [0.0, 0.0, -5.0], modelMatrix );
+			mat4.translate( modelMatrix, [0.0, 0.0, 0.0], modelMatrix );
 			mat4.multiply( vepMatrix, modelMatrix, mvpMatrix );
 			mat4.inverse( modelMatrix, invMatrix);
 			triangleShader.setProgram( [ modelMatrix, mvpMatrix, invMatrix, light00.position, views.eyePosition, light00.ambient ] );
@@ -1084,10 +951,10 @@ function phoenixGr(){
 				gl.enableVertexAttribArray(attL[idx]);
 				gl.vertexAttribPointer(attL[idx], attS[idx], gl.FLOAT, false, 0, 0);
 			}
+			gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, EquinoxFloor.Ibo );
+			gl.drawElements( gl.TRIANGLES, EquinoxFloor.Data.i.length, gl.UNSIGNED_SHORT, 0 );
 		}());
-		
-		gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, EquinoxFloor.Ibo );
-		gl.drawElements( gl.TRIANGLES, EquinoxFloor.Data.i.length, gl.UNSIGNED_SHORT, 0 );
+/**/
 		
 		// 注視点位置表示
 		(function(){
@@ -1106,6 +973,48 @@ function phoenixGr(){
 			Roller.prepDraw( triangleShader, vepMatrix, [ 0, 0, 0, light00.position, views.eyePosition, light00.ambient ] );
 			Roller.draw( triangleShader );
 		}());
+		
+/**/
+		// Walker
+		if( keyStatus[6] ){
+			if( keyStatus[0] ){	// up
+				Walker.pos[0] += 0.1;
+			}
+			if( keyStatus[1] ){	// down
+				Walker.pos[0] -= 0.1;
+			}
+			if( keyStatus[2] ){	// left
+				Walker.pos[2] += 0.1;
+			}
+			if( keyStatus[3] ){	// right
+				Walker.pos[2] -= 0.1;
+			}
+			
+		}
+		const rotWalker = [
+			cntrls.RotXY.value/50,
+			cntrls.RotYZ.value/50,
+			cntrls.RotYH.value/50,
+			cntrls.RotZH.value/50,
+			cntrls.RotXH.value/50,
+			cntrls.RotXZ.value/50
+		];
+		Walker.setRotate( rotWalker );
+		if(( cntrls.wkrPos[0] !== Walker.pos[0] )||( cntrls.wkrPos[1] !== Walker.pos[1] )||( cntrls.wkrPos[2] !== Walker.pos[2] )||( cntrls.wkrPos[3] !== Walker.pos[3] )){
+			isRedraw = true;
+			cntrls.wkrPos = Walker.pos.concat();
+		}
+		Walker.walk( cntrls.Dist.value/100 );	// APIは仮
+		if( isRedraw ){
+			// 八胞体切断体の作成
+			TriBuffer.initialize( triangleShader );
+		}
+		Walker.draw( isRedraw, hPos, vepMatrix, [ 0, 0, 0, light00.position, views.eyePosition, light00.ambient ] );
+		
+/*		// Leg Test
+		LegZero.walk( cntrls.Dist.value/100 );
+		LegZero.draw( isRedraw, hPos, vepMatrix, [ 0, 0, 0, light00.position, views.eyePosition, light00.ambient ] );
+/**/
 		
 		// 三角バッファの描画
 		gl.disable(gl.CULL_FACE);
@@ -1143,10 +1052,8 @@ function phoenixGr(){
 	// プログラムオブジェクトとシェーダを生成しリンクする関数
 	function createShaderProgram( gl, vsId, fsId ){
 		"use strict";
-		var shader = [],
-			cnt = 0,
-			scriptElement = [ document.getElementById(vsId), document.getElementById(fsId) ],
-			program;
+		let shader = [],
+			scriptElement = [ document.getElementById(vsId), document.getElementById(fsId) ];
 		
 		if(( !scriptElement[0] )||( !scriptElement[1] )){
 			return;
@@ -1157,7 +1064,7 @@ function phoenixGr(){
 		}else{
 			return;
 		}
-		for( cnt = 0; cnt < 2; ++cnt ){
+		for( let cnt = 0; cnt < 2; ++cnt ){
 			gl.shaderSource(shader[cnt], scriptElement[cnt].text);
 			gl.compileShader(shader[cnt]);
 			if( !gl.getShaderParameter(shader[cnt], gl.COMPILE_STATUS) ){
@@ -1166,7 +1073,7 @@ function phoenixGr(){
 			}
 		}
 		
-		program = gl.createProgram();
+		let program = gl.createProgram();
 		gl.attachShader(program, shader[0]);
 		gl.attachShader(program, shader[1]);
 		gl.linkProgram(program);
@@ -1189,6 +1096,7 @@ function phoenixGr(){
 			left:	"ArrowLeft",
 			right:	"ArrowRight",
 			shift:	"Shift",
+			ctrl:	"Control",
 			space:	" ",
 			keyB:	"b",
 			keyF:	"f",
