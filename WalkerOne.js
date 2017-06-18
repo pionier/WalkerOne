@@ -22,7 +22,6 @@ function WalkerOne(){
 		Phoenix_OffsY = 0,
 		Phoenix_OffsH = 3,
 		EquinoxFloor = {},
-		keyStatus = [ false, false, false, false, false, false, false ],
 		SIGHT_LENGTH = 3*2,
 		SIGHT_HEIGHT = 2,
 		ROT_RATE = 0.02,
@@ -56,12 +55,14 @@ function WalkerOne(){
 		return;
 	}
 	// ブラウザごとのキーイベント名称を取得
-	var keyEventNames = getKeyEventNames( fDWL.getBrowserInfo( gl ) );
+	let keyEventNames = getKeyEventNames( fDWL.getBrowserInfo( gl ) );
 	
 	cnvs.width  = 512;
 	cnvs.height = 384;
 	
 	// キーイベント
+	let keyStatus = [ false, false, false, false, false, false, false, false, false ];
+	let keyBackup = [ false, false, false, false, false, false, false, false, false ];
 	if( window.addEventListener ){
 		function KeyDownFunc( evt ){
 			"use strict";
@@ -87,7 +88,12 @@ function WalkerOne(){
 			if( keyname === keyEventNames.ctrl ){
 				keyStatus[6] = true;
 			}
-			
+			if( keyname === keyEventNames.space ){
+				keyStatus[7] = true;
+			}
+			if( keyname === keyEventNames.keyB ){
+				keyStatus[8] = true;
+			}
 		}
 		
 		function KeyUpFunc( evt ){
@@ -113,6 +119,12 @@ function WalkerOne(){
 			}
 			if( keyname === keyEventNames.ctrl ){
 				keyStatus[6] = false;
+			}
+			if( keyname === keyEventNames.space ){
+				keyStatus[7] = false;
+			}
+			if( keyname === keyEventNames.keyP ){
+				keyStatus[8] = false;
 			}
 		}
 		// ドキュメントにリスナーを登録
@@ -183,21 +195,420 @@ function WalkerOne(){
 	TriBuffer = new fDWL.R4D.TriangleBuffer( gl, TRI_BUFFER_SIZE );
 	
 /**/
+	// 足の移動目標座標
+	const LgMvTargPos0 = 0;
+	const LgMvTargPosW = 1;
+	const LgMvTargPosF = 2;
+	const LgMvTargPosB = 3;
+	const LgMvTargPosR = 4;
+	const LgMvTargPosL = 5;
+	const LgMvStride = 2;
+	const LgMvStrideH = LgMvStride/2;
+	// 回転移動用移動開始・終了点算出用
+	const stdLegPosLen = Math.sqrt( 5.21 );
+	const stdLPX = -1.1/stdLegPosLen;
+	const stdLPZ = 2/stdLegPosLen;
+	// 移動コマンド
+	const CmdNop = 0;					// 教養コマンド：動作なし
+	const CmdMvStop = CmdNop+1;			// 停止
+	const CmdMvFwd = CmdMvStop+1;		// 前進
+	const CmdMvBack = CmdMvFwd+1;		// 後進
+	const CmdMvPw2Pb2 = CmdMvBack+1;	// 停止準備から停止作業へ
+	const CmdMvTurnR = CmdMvPw2Pb2+1;	// 右回転
+	const CmdMvTurnL = CmdMvTurnR+1;	// 左回転
+	const CmdMvMax = CmdMvTurnL+1;
+	// 足へ／からのコマンド
+	const CmdLgF = CmdMvMax+1;			// 脚かき動作
+	const CmdLgB = CmdLgF+1;			// 脚上げ復帰動作
+	const CmdLgW = CmdLgB+1;			// その場で待機
+	const CmdLgEnd = CmdLgW+1;			// 動作終了(目標地点到達)
+	// 足のState
+	const StateW  = 0;				// 待機中
+	const StateNf = StateW+1;		// 通常移動中
+	const StateNb = StateNf+1;		// 通常復帰中
+	const StatePw = StateNb+1;		// 停止準備待機中
+	const StatePb = StatePw+1;		// 停止準備移動中(陽)
+	const StatePb2 = StatePb+1;		// 停止準備移動中(陰)
+	// コマンドリストID(=LegID)
+	const CmdListLg = 0;
+	const CmdListLg0 = CmdListLg;
+	const CmdListLg1 = CmdListLg0+1;
+	const CmdListLg2 = CmdListLg1+1;
+	const CmdListLg3 = CmdListLg2+1;
+	const CmdListLg4 = CmdListLg3+1;
+	const CmdListLg5 = CmdListLg4+1;
+	const CmdListLg6 = CmdListLg5+1;
+	const CmdListLg7 = CmdListLg6+1;
+	const CmdListOut = CmdListLg7+1;
+	const CmdListMax = CmdListOut+1;
+	
+	
+	// 足の動作コントローラ
+	let LegBrain = {
+		
+		// 現状の全体コマンド
+		MainCmd:	CmdNop,
+		// 保存中の次回コマンド
+		NextCmd:	CmdNop,
+		// 各脚
+		LegObj:		[ null, null, null, null, null, null, null, null ],
+		// 脚のステート
+		LegState:	[ StateW, StateW, StateW, StateW, StateW, StateW, StateW, StateW ],
+		// 足のモード(Master/Slave)
+		LegMode:	[ false, true, true, false, true, false, false, true ],
+		// コマンドリスト：コマンドの郵便受け
+		CmdList:	[ CmdNop, CmdNop, CmdNop, CmdNop, CmdNop, CmdNop, CmdNop, CmdNop, CmdNop ],
+		// 足の基準位置
+		StdLegPos:	[
+			[ 2, -0.5, 1.1, 0 ], [ -2, -0.5, 1.1, 0 ], [ 2, -0.5, -1.1, 0 ], [ -2, -0.5, -1.1, 0 ],
+			[ 2, -0.5, 1.1, 0 ], [ -2, -0.5, 1.1, 0 ], [ 2, -0.5, -1.1, 0 ], [ -2, -0.5, -1.1, 0 ]
+		],
+		// 前進時の目標地点
+		FwdLegPos:	[
+			[ 2, -0.5, 0.1, 0 ], [ -2, -0.5, 0.1, 0 ], [ 2, -0.5, -0.1, 0 ], [ -2, -0.5, -0.1, 0 ],
+			[ 2, -0.5, 2.1, 0 ], [ -2, -0.5, 2.1, 0 ], [ 2, -0.5, -0.1, 0 ], [ -2, -0.5, -0.1, 0 ]
+		],
+		// 後退時の目標地点
+		BckLegPos:	[
+			[ 2, -0.5, 2.1, 0 ], [ -2, -0.5, 2.1, 0 ], [ 2, -0.5, -2.1, 0 ], [ -2, -0.5, -2.1, 0 ],
+			[ 2, -0.5, 0.1, 0 ], [ -2, -0.5, 0.1, 0 ], [ 2, -0.5, -2.1, 0 ], [ -2, -0.5, -2.1, 0 ]
+		],
+		// 右回転時の目標地点
+		RitLegPos:	[
+			[ 2+stdLPX, -0.5, 1.1+stdLPZ, 0 ], [ -2+stdLPX, -0.5, 1.1-stdLPZ, 0 ], [ 2-stdLPX, -0.5, -1.1+stdLPZ, 0 ], [ -2-stdLPX, -0.5, -1.1-stdLPZ, 0 ],
+			[ 2+stdLPX, -0.5, 1.1+stdLPZ, 0 ], [ -2+stdLPX, -0.5, 1.1-stdLPZ, 0 ], [ 2-stdLPX, -0.5, -1.1+stdLPZ, 0 ], [ -2-stdLPX, -0.5, -1.1-stdLPZ, 0 ]
+		],
+		// 左回転時の目標地点
+		LftLegPos:	[
+			[ 2-stdLPX, -0.5, 1.1-stdLPZ, 0 ], [ -2-stdLPX, -0.5, 1.1+stdLPZ, 0 ], [ 2+stdLPX, -0.5, -1.1-stdLPZ, 0 ], [ -2+stdLPX, -0.5, -1.1+stdLPZ, 0 ],
+			[ 2-stdLPX, -0.5, 1.1-stdLPZ, 0 ], [ -2-stdLPX, -0.5, 1.1+stdLPZ, 0 ], [ 2+stdLPX, -0.5, -1.1-stdLPZ, 0 ], [ -2+stdLPX, -0.5, -1.1+stdLPZ, 0 ]
+		],
+		
+		// 各脚へのコマンド発行
+		// outerCmd: 受け取ったコマンド(動作終了通知も含む)
+		// lgNo: 脚の番号
+		sndCmd: function( outerCmd, lgNo ){
+			let cmd = [ CmdNop, 0, 0, 0, 0 ];	// CmdID, TargetPos
+			let trgPos = LgMvTargPos0;
+			
+			if( outerCmd === this.MainCmd ){
+				return;
+			}
+			
+			switch( outerCmd ){
+			case CmdMvStop:
+				// Stop命令が動作するのは移動(Nf/Nb)時のみ
+				if( this.LegState[lgNo] === StateNf ){
+					// その場で待機
+					this.LegState[lgNo] = StatePw;
+					cmd[0] = CmdLgW;
+				}else
+				if( this.LegState[lgNo] === StateNb ){
+					// 標準位置への復帰作業
+					this.LegState[lgNo] = StatePb;
+					cmd[0] = CmdLgB;
+					trgPos = LgMvTargPosW;
+				}
+				break;
+			case CmdMvFwd:
+				// 前進命令
+				switch( this.LegState[lgNo] ){
+				case StateW:
+					if( this.LegMode[lgNo] ){
+						this.LegState[lgNo] = StateNb;
+						cmd[0] = CmdLgB;
+						trgPos = LgMvTargPosB;
+					}else{
+						this.LegState[lgNo] = StateNf;
+						cmd[0] = CmdLgF;
+						trgPos = LgMvTargPosF;
+					}
+					break;
+				case StateNf:
+					if( this.MainCmd === CmdMvBack ){
+						cmd[0] = CmdLgF;
+						trgPos = LgMvTargPosF;
+					}
+					break;
+				case StateNb:
+					if( this.MainCmd === CmdMvBack ){
+						cmd[0] = CmdLgB;
+						trgPos = LgMvTargPosB;
+					}
+					break;
+				default:
+					break;
+				}
+				break;
+			case CmdMvBack:
+				// 後退命令
+				switch( this.LegState[lgNo] ){
+				case StateW:
+					if( this.LegMode[lgNo] ){
+						this.LegState[lgNo] = StateNb;
+						cmd[0] = CmdLgB;
+						trgPos = LgMvTargPosF;
+					}else{
+						this.LegState[lgNo] = StateNf;
+						cmd[0] = CmdLgF;
+						trgPos = LgMvTargPosB;
+					}
+					break;
+				case StateNf:
+					if( this.MainCmd === CmdMvFwd ){
+						cmd[0] = CmdLgF;
+						trgPos = LgMvTargPosB;
+					}else
+					if( this.MainCmd === CmdMvBack ){
+						trgPos = LgMvTargPosF;
+					}
+					break;
+				case StateNb:
+					if( this.MainCmd === CmdMvFwd ){
+						cmd[0] = CmdLgB;
+						trgPos = LgMvTargPosF;
+					}else
+					if( this.MainCmd === CmdMvBack ){
+						trgPos = LgMvTargPosB;
+					}
+					break;
+				default:
+					break;
+				}
+				break;
+			case CmdLgEnd:
+				// 動作終了通知
+				switch( this.LegState[lgNo] ){
+				case StateNf:
+					this.LegState[lgNo] = StateNb;
+					cmd[0] = CmdLgB;
+					if( this.MainCmd === CmdMvBack ){
+						trgPos = LgMvTargPosF;
+					}else
+					if( this.MainCmd === CmdMvTurnR ){
+						trgPos = LgMvTargPosR;
+					}else
+					if( this.MainCmd === CmdMvTurnL ){
+						trgPos = LgMvTargPosL;
+					}else{
+						trgPos = LgMvTargPosB;
+					}
+					break;
+				case StateNb:
+					this.LegState[lgNo] = StateNf;
+					cmd[0] = CmdLgF;
+					if( this.MainCmd === CmdMvBack ){
+						trgPos = LgMvTargPosB;
+					}else
+					if( this.MainCmd === CmdMvTurnR ){
+						trgPos = LgMvTargPosL;
+					}else
+					if( this.MainCmd === CmdMvTurnL ){
+						trgPos = LgMvTargPosR;
+					}else{
+						trgPos = LgMvTargPosF;
+					}
+					break;
+				case StatePw:
+					this.LegState[lgNo] = StatePb2;
+					cmd[0] = CmdLgB;
+					trgPos = LgMvTargPosW;
+					break;
+				case StatePb:
+				case StatePb2:
+					this.LegState[lgNo] = StateW;
+					trgPos = LgMvTargPosW;
+					break;
+				default:
+					break;
+				}
+				break;
+			case CmdMvTurnR:
+				// 右回転
+				switch( this.LegState[lgNo] ){
+				case StateW:
+					if( this.LegMode[lgNo] ){
+						this.LegState[lgNo] = StateNb;
+						cmd[0] = CmdLgB;
+						trgPos = LgMvTargPosR;
+					}else{
+						this.LegState[lgNo] = StateNf;
+						cmd[0] = CmdLgF;
+						trgPos = LgMvTargPosL;
+					}
+					break;
+				case StateNf:
+					if( this.MainCmd === CmdMvTurnL ){
+						cmd[0] = CmdLgF;
+						trgPos = LgMvTargPosL;
+					}
+					break;
+				case StateNb:
+					if( this.MainCmd === CmdMvTurnL ){
+						cmd[0] = CmdLgB;
+						trgPos = LgMvTargPosR;
+					}
+					break;
+				default:
+					break;
+				}
+				break;
+			case CmdMvTurnL:
+				// 左回転
+				switch( this.LegState[lgNo] ){
+				case StateW:
+					if( this.LegMode[lgNo] ){
+						this.LegState[lgNo] = StateNb;
+						cmd[0] = CmdLgB;
+						trgPos = LgMvTargPosL;
+					}else{
+						this.LegState[lgNo] = StateNf;
+						cmd[0] = CmdLgF;
+						trgPos = LgMvTargPosR;
+					}
+					break;
+				case StateNf:
+					if( this.MainCmd === CmdMvTurnR ){
+						cmd[0] = CmdLgF;
+						trgPos = LgMvTargPosR;
+					}
+					break;
+				case StateNb:
+					if( this.MainCmd === CmdMvTurnR ){
+						cmd[0] = CmdLgB;
+						trgPos = LgMvTargPosL;
+					}
+					break;
+				default:
+					break;
+				}
+				break;
+			case CmdMvPw2Pb2:
+				// デバグ用：終了待機から終了動作へ
+				if( this.LegState[lgNo] === StatePw ){
+					this.LegState[lgNo] = StatePb2;
+					cmd[0] = CmdLgB;
+					trgPos = LgMvTargPosW;
+				}
+				break;
+			default:
+				break;
+			}
+			if( trgPos !== LgMvTargPos0 ){
+				if( trgPos === LgMvTargPosF ){
+					cmd[1] = this.FwdLegPos[lgNo][0], cmd[2] = this.FwdLegPos[lgNo][1], cmd[3] = this.FwdLegPos[lgNo][2], cmd[4] = this.FwdLegPos[lgNo][3];
+				}else
+				if( trgPos === LgMvTargPosB ){
+					cmd[1] = this.BckLegPos[lgNo][0], cmd[2] = this.BckLegPos[lgNo][1], cmd[3] = this.BckLegPos[lgNo][2], cmd[4] = this.BckLegPos[lgNo][3];
+				}else
+				if( trgPos === LgMvTargPosR ){
+					cmd[1] = this.RitLegPos[lgNo][0], cmd[2] = this.RitLegPos[lgNo][1], cmd[3] = this.RitLegPos[lgNo][2], cmd[4] = this.RitLegPos[lgNo][3];
+				}else
+				if( trgPos === LgMvTargPosL ){
+					cmd[1] = this.LftLegPos[lgNo][0], cmd[2] = this.LftLegPos[lgNo][1], cmd[3] = this.LftLegPos[lgNo][2], cmd[4] = this.LftLegPos[lgNo][3];
+				}else{		// LgMvTargPosW
+					cmd[1] = this.StdLegPos[lgNo][0], cmd[2] = this.StdLegPos[lgNo][1], cmd[3] = this.StdLegPos[lgNo][2], cmd[4] = this.StdLegPos[lgNo][3];
+				}
+			}
+			if( this.LegObj[ lgNo ] ){
+				this.LegObj[lgNo].rcvCmd( cmd );
+			}
+			//return cmd;
+		},
+		// コマンド受信：コマンド受信リストに登録
+		rcvCmd: function( outerCmd, lgNo ){
+			if(( CmdListLg0 <= lgNo )&&( lgNo < CmdListMax )){
+				
+				// 動作中ならStopに差し替え
+				if( ( lgNo === CmdListOut )&&
+					((( outerCmd === CmdMvFwd )||( outerCmd === CmdMvBack ))&&(( this.MainCmd === CmdMvTurnR )||( this.MainCmd === CmdMvTurnL )))||
+					((( outerCmd === CmdMvTurnR )||( outerCmd === CmdMvTurnL ))&&(( this.MainCmd === CmdMvFwd )||( this.MainCmd === CmdMvBack )))
+				){
+					this.NextCmd = outerCmd;	// 入力を保存
+					outerCmd = CmdMvStop;		// 動作停止を実行
+				}
+				// コマンドリストに登録
+				this.CmdList[lgNo] = outerCmd;
+			}
+		},
+		// コマンド受信：コマンド受信リストをチェック
+		checkCmdList: function(){
+			let cmd = CmdNop;
+			// 各脚からのコマンドをチェック：CmdLgEnd でなければNop
+			for( let lgNo = CmdListLg0; lgNo < CmdListMax; lgNo++ ){
+				cmd = this.CmdList[lgNo];
+				if( cmd === CmdNop ){
+					continue;
+				}
+				if( lgNo !== CmdListOut ){
+					// 脚からの終了通知：自身に通知
+					this.sndCmd( cmd, lgNo );
+					// 終了動作待機中ならペアの片割れにも通知
+					let pairNo = this.getPairNo( lgNo );
+					if( this.LegState[pairNo] === StatePw ){
+						this.sndCmd( cmd, pairNo );
+					}
+					// 全動作終了なら、次回コマンドを発行
+					if( this.CmdList[CmdListOut] === CmdNop ){
+						for( let idx = 0; idx < this.LegState.length; ++idx ){
+							if( this.LegState[idx] !== StateW ){
+								break;
+							}
+							this.CmdList[CmdListOut] = this.NextCmd;
+							this.NextCmd = CmdNop;
+						}
+					}
+				}else{
+					// 各脚に通達
+					for( let idx = CmdListLg0; idx < CmdListOut; idx++ ){
+						this.sndCmd( cmd, idx );
+					}
+					this.MainCmd = cmd;
+				}
+				this.CmdList[lgNo] = CmdNop;
+			}
+		},
+		// 脚のペアの相手を返す
+		getPairNo: function( lgNo ){
+			let pairNo = 0;
+			switch( lgNo ){
+			case 0:
+			case 2:
+			case 4:
+			case 6:
+				pairNo = lgNo+1;
+				break;
+			case 1:
+			case 3:
+			case 5:
+			case 7:
+				pairNo = lgNo-1;
+				break;
+			default :
+				pairNo = 0;
+				break;
+			}
+			return pairNo;
+		}
+	};
+	
 	const LegBaseHeight = -0.5;
-	const LEG_NUM = 1;				// 脚の本数
+	const LEG_NUM = 2;				// 脚の本数
 	// Leg of Walkers
 	let LegSet = function( legNo, pos, rotate, shader, brain ){
 		this.id = legNo;
 		this.pos = pos.concat();						// LegSet全体の4次元座標
+		this.brain = brain;
 		this.rot = rotate;
 		this.basePos = [ 0,0,0,0 ];							// 常に0
-		//this.anklePos = [ brain.StdLegPos[legNo].concat() ];	// basePosからの相対位置
-		this.anklePos = [ 0,0,0,0 ];						// basePosからの相対位置
+		this.anklePos = [ brain.StdLegPos[legNo].concat() ];	// basePosからの相対位置
 		this.kneePos = [ 0,0,0,0 ];							// basePosからの相対位置
 		this.rotate = [ 0,0,0,0,0,0 ];						// LegSet全体の回転角
 		this.scale = [ 1,1,1,0 ];
 		this.shader = shader;
-		//this.State = StateW;								// 市の移動モード(State)
+		this.State = StateW;								// 脚の移動モード(State)
+		this.targetPos = [ 0,0,0,0 ];
+		this.srcPos = [ 0,0,0, ];
 		
 		this.Base  = new fDWL.D4D.Sphere4D( gl, [ 0,0,0,0 ], [ 0,0,0,0,0,0 ], 8, 8, 0.2, [ 0.8, 0.8, 1.0, 1.0 ], shader );
 		this.Knee  = new fDWL.D4D.Sphere4D( gl, [ 0,0,0,0 ], [ 0,0,0,0,0,0 ], 8, 8, 0.2, [ 0.8, 0.8, 1.0, 1.0 ], shader );
@@ -339,6 +750,10 @@ function WalkerOne(){
 			this.Foot.setTriangle = this.UpperLeg.setTriangleFlat;
 			this.Foot.getNormal = this.UpperLeg.getNormalPlane;
 			this.Foot.getColor = this.UpperLeg.getColorPlane;
+			//  初期位置設定
+			this.targetPos = this.brain.StdLegPos[this.id];
+			this.srcPos = this.brain.StdLegPos[this.id];
+			this.anklePos = this.targetPos.concat();
 			// 初期化変換
 			this.UpperLeg.transform();
 			this.UpperLeg.setTriBuffer( primBuffer );
@@ -346,16 +761,38 @@ function WalkerOne(){
 			this.LowerLeg.setTriBuffer( primBuffer );
 			this.Foot.transform();
 			this.Foot.setTriBuffer( primBuffer );
-			
-			
 		},
 		
 		setPos: function( pos ){
 			this.pos = pos;
 		},
 		
+		// 本体からのコマンド受信
+		rcvCmd: function( cmd ){
+			switch( cmd[0] ){
+			case CmdLgF:	// 脚かき動作
+				this.targetPos = [ cmd[1],cmd[2],cmd[3],cmd[4] ];
+				if(( this.State === StateW )||( this.State === StateNb )){
+					this.State = StateNf;
+				}
+				break;
+			case CmdLgB:	// 脚上げ復帰動作
+				this.targetPos = [ cmd[1],cmd[2],cmd[3],cmd[4] ];
+				if(( this.State === StateW )||( this.State === StateNf )){
+					this.State = StateNb;
+				}
+				break;
+			case CmdLgW:	// その場で待機
+				this.State = StateW;
+				break;
+			case CmdNop:
+			default:
+				break;
+			}
+		},
+		
 		// 関節位置変更実験
-		walk: function( pos, wkrRot, dist ){
+		walk: function( pos, wkrMtx, wkrPos, wkrRot, dist ){
 			
 			// 基点と上腿
 			//this.basePos = [ 0,0,0,0 ];
@@ -364,43 +801,83 @@ function WalkerOne(){
 			// 膝位置
 			this.kneePos  = this.calcKneePos();
 			
-			
 			let rotUpper = this.calcRotate( this.basePos,  this.anklePos, wkrRot );
 			let rotLower = rotUpper.concat();
-/*
-			for( let idx = 0; idx < rotLower.length; ++idx ){
-				rotLower[idx] += Math.PI;
-				if( rotLower[idx] > Math.PI*2 ){
-					rotLower[idx] -= Math.PI*2;
-				}
-			}
-*/
-			rotUpper[1] = this.calcRotateYZ( this.basePos,  this.kneePos, this.UpperLeg.legLen );
-			rotLower[1] = this.calcRotateYZ( this.anklePos, this.kneePos, this.LowerLeg.legLen );
-			
-			// 本体の位置と角度を反映
-			this.pos = pos;
-			
-//			let rotUpr = this.UpperLeg.getRotate();
-//			rotUpr[1] = rotUpper;
-//			this.UpperLeg.setRotate( rotUpr );
+			rotUpper[1] =  this.calcRotateYZ( this.basePos,  this.kneePos, this.UpperLeg.legLen );
+			rotLower[1] = -this.calcRotateYZ( this.anklePos, this.kneePos, this.LowerLeg.legLen );
 			this.UpperLeg.setRotate( rotUpper );
-			
-//			let rotLwr = this.LowerLeg.getRotate();
-//			rotLwr[1] = rotLower;
-//			this.LowerLeg.setRotate( rotLwr );
 			this.LowerLeg.setRotate( rotLower );
+			
+			// 各パーツに座標・角度を設定
+			// LegPos( = base )
+			this.pos = fDWL.add4D( wkrMtx.mulVec( pos[0], pos[1], pos[2], pos[3] ), wkrPos );
+			// base
+			let basePos = this.pos.concat();
+			this.Base.setPos( basePos );
+			this.UpperLeg.setPos( basePos );
+			// ankle
+			let anklePos = fDWL.add4D( wkrMtx.mulVec( this.anklePos[0], this.anklePos[1], this.anklePos[2], this.anklePos[3] ), basePos );
+			this.Ankle.setPos( anklePos );
+			this.Foot.setPos( anklePos );
+			this.LowerLeg.setPos( anklePos );
+			// knee
+			let kneePos = fDWL.add4D( wkrMtx.mulVec( this.kneePos[0], this.kneePos[1], this.kneePos[2], this.kneePos[3] ), basePos );
+			this.Knee.setPos( kneePos );
+			
+			// 移動終了チェック
+			if(( this.anklePos[0] === this.targetPos[0] )&&( this.anklePos[1] === this.targetPos[1] )&&( this.anklePos[2] === this.targetPos[2] )&&( this.anklePos[3] === this.targetPos[3] )){
+				// 終了通知を発信
+				this.brain.rcvCmd( CmdLgEnd, this.id );
+			}
 		},
 		
 		// 踝の位置を算出：仮
-		calcAnklePos: function( var0 ){
+		calcAnklePos: function( speed ){
+			let anklePos = [ this.anklePos[0], this.anklePos[1], this.anklePos[2], this.anklePos[3] ];
 			
-			
-			
-//			let anklePos = [ 0,-0.5,var0,0 ];
-			let anklePos = [ var0/2,-0.5,2,0 ];
-			
-			
+			if( ( this.State === StateNf )||
+				( this.State === StateNb )||
+				( this.State === StatePb )||
+				( this.State === StatePb2 )
+			){
+				const difH = 0.1;
+				let movDir = [ this.targetPos[0]-anklePos[0], 0, this.targetPos[2]-anklePos[2], this.targetPos[3]-anklePos[3] ];
+				if( (movDir[0]*movDir[0]+movDir[2]*movDir[2]+movDir[3]*movDir[3]) < speed ){
+					// 移動先に元々近ければ移動先を直接指定
+					anklePos[0] = this.targetPos[0];
+					anklePos[2] = this.targetPos[2];
+					anklePos[3] = this.targetPos[3];
+					
+					// 高さの差が大きい場合は修正限界を考慮する
+					if( anklePos[1] > (this.targetPos[1]+difH) ){
+						anklePos[1] -= difH;
+					}else
+					if( anklePos[1] < (this.targetPos[1]-difH) ){
+						anklePos[1] += difH;
+					}else{
+						anklePos[1] = this.targetPos[1];
+					}
+				}else{
+					// 移動先から遠ければ、方向づけして移動量を付加
+					let mvSize = fDWL.inProd4D( movDir, movDir );
+					movDir[0] /= mvSize, movDir[1] /= mvSize, movDir[2] /= mvSize, movDir[3] /= mvSize;
+					//movDir = fDWL.normalize3( movDir );
+					anklePos[0] += movDir[0]*speed;
+					anklePos[1] = -0.5;
+					anklePos[2] += movDir[2]*speed;
+					anklePos[3] += movDir[3]*speed;
+					
+					// 脚上げ移動なら脚高度を計算
+					if( this.State !== StateNf ){
+						const leng = Math.sqrt(
+							(this.targetPos[0]-anklePos[0])*(this.targetPos[0]-anklePos[0])+
+							(this.targetPos[2]-anklePos[2])*(this.targetPos[2]-anklePos[2])+
+							(this.targetPos[3]-anklePos[3])*(this.targetPos[3]-anklePos[3]) );
+						const hight = LgMvStrideH - (LgMvStrideH-leng)*(LgMvStrideH-leng)/LgMvStrideH;
+						anklePos[1] = this.targetPos[1] + hight;
+					}
+				}
+			}
 			return anklePos;
 		},
 		
@@ -425,7 +902,7 @@ function WalkerOne(){
 				const cosYZ = DD/Dst;
 				const newDist   =  dist*cosYZ+height*sinYZ;
 				const newHeight = -dist*sinYZ+height*cosYZ;
-				dist =  newDist;
+				dist = newDist;
 				height = newHeight;
 			}
 			let kneePos = basePos.concat();
@@ -442,7 +919,7 @@ function WalkerOne(){
 		calcRotateYZ: function( srcPos, dstPos, legLen ){
 			const height = dstPos[1]-srcPos[1];
 			const ang = Math.PI/2 -Math.asin( height/legLen );
-			return ( dstPos[2] > srcPos[2] )?ang:-ang;
+			return ang;
 		},
 		// 横方向への回転角を求める
 		calcRotate: function( srcPos, dstPos, wkrRot ){
@@ -467,20 +944,7 @@ function WalkerOne(){
 		},
 		
 		// 描画
-		draw:	function( isRedraw, hPos, viewProjMtx, shaderParam ){
-			// 各パーツに座標・角度を設定
-			let basePos = this.basePos.concat();
-			basePos[0] += this.pos[0], basePos[1] += this.pos[1], basePos[2] += this.pos[2], basePos[3] += this.pos[3];
-			this.Base.setPos( basePos );
-			this.UpperLeg.setPos( basePos );
-			let anklePos = this.anklePos.concat();
-			anklePos[0] += this.pos[0], anklePos[1] += this.pos[1], anklePos[2] += this.pos[2], anklePos[3] += this.pos[3];
-			this.Ankle.setPos( anklePos );
-			this.Foot.setPos( anklePos );
-			this.LowerLeg.setPos( anklePos );
-			let kneePos = this.kneePos.concat();
-			kneePos[0] += this.pos[0], kneePos[1] += this.pos[1], kneePos[2] += this.pos[2], kneePos[3] += this.pos[3];
-			this.Knee.setPos( kneePos );
+		draw:	function( isRedraw, hPos, wkrMtx, viewProjMtx, shaderParam ){
 			
 			// 描画
 			if( isRedraw ){
@@ -490,7 +954,6 @@ function WalkerOne(){
 				this.LowerLeg.dividePylams( hPos );
 				this.Foot.transform();
 				this.Foot.dividePylams( hPos );
-				
 			}
 /**/
 			this.Base.prepDraw( hPos, viewProjMtx, shaderParam );
@@ -503,19 +966,14 @@ function WalkerOne(){
 		},
 	}
 	
-/*	// 仮の脚
-	let LegZero = new LegSet( 0, [ 0,0,0,Phoenix_OffsH ], [ 0,0,0,0,0,0 ], triangleShader, 0 );
-	LegZero.initParts( TriBuffer );
-/**/
-	
-	
 	// 
-	let WalkerOne = function( gl, pos, rotate, shader ){
+	let WalkerOne = function( gl, pos, rotate, shader, brain ){
 		this.pos = pos;
 		this.rot = rotate;
 		this.scale = [ 1,1,1,1 ];
 		this.shader = shader;
 		this.localMtx = new fDWL.R4D.Matrix4();
+		this.brain = brain;
 		
 		// 胴体部分
 		this.Body = new fDWL.R4D.Pylams4D(
@@ -566,21 +1024,21 @@ function WalkerOne(){
 		this.Face = new fDWL.D4D.Sphere4D( gl, [ 0, 0, 0, 0 ], [ 0,0,0,0,0,0 ],  8,  8, 0.3, [ 1.0, 0.7, 0.7, 1.0 ], shader );
 		this.HeadPlace = [ 0, 0.8,  0.0, 0 ];	// 基準位置
 		this.HeadPos = [ 0,0,0,0 ];				// ローカル座標変換結果
-		this.FacePlace = [ 0, 0.8, -0.5, 0 ];	// 基準位置
+		this.FacePlace = [ 0, 0.8, 0.5, 0 ];	// 基準位置
 		this.FacePos = [ 0,0,0,0 ];				// ローカル座標変換結果
 		
 		// 脚部
 		this.Legs = [];
 		this.LegPlace = [
-			[ 0.5,LegBaseHeight,0.5,0 ], [ 0,0,0,0 ], [ 0,0,0,0 ], [ 0,0,0,0 ],
+			[ 0.5,LegBaseHeight,0.5,0 ], [ -0.5,LegBaseHeight,0.5,0 ], [ 0,0,0,0 ], [ 0,0,0,0 ],
 			[ 0,0,0,0 ], [ 0,0,0,0 ], [ 0,0,0,0 ], [ 0,0,0,0 ]
 		];
 		this.LegPos = [];
 		for( let idx = 0; idx < LEG_NUM; ++idx ){
 			
-			this.Legs[idx] = new LegSet( idx, this.LegPlace[idx], [ 0,0,0,0,0,0 ], triangleShader, 0 );
+			this.Legs[idx] = new LegSet( idx, this.LegPlace[idx], [ 0,0,0,0,0,0 ], triangleShader, this.brain );
+			this.brain.LegObj[idx] = this.Legs[idx];
 		}
-		
 	}
 	
 	WalkerOne.prototype = {
@@ -640,12 +1098,7 @@ function WalkerOne(){
 			this.HeadPos = this.localMtx.mulVec( this.HeadPlace[0], this.HeadPlace[1], this.HeadPlace[2], this.HeadPlace[3] );
 			this.FacePos = this.localMtx.mulVec( this.FacePlace[0], this.FacePlace[1], this.FacePlace[2], this.FacePlace[3] );
 			for( let idx = 0; idx < LEG_NUM; ++idx ){
-				this.LegPos[idx] = this.localMtx.mulVec( this.LegPlace[idx][0], this.LegPlace[idx][1], this.LegPlace[idx][2], this.LegPlace[idx][3] );
-				this.LegPos[idx][0] += this.pos[0];
-				this.LegPos[idx][1] += this.pos[1];
-				this.LegPos[idx][2] += this.pos[2];
-				this.LegPos[idx][3] += this.pos[3];
-				this.Legs[idx].walk( this.LegPos[idx], this.rot.concat(), var0 );
+				this.Legs[idx].walk( this.LegPlace[idx], this.localMtx, this.pos, this.rot.concat(), var0 );
 			}
 		},
 		
@@ -668,12 +1121,12 @@ function WalkerOne(){
 			this.Face.prepDraw( hPos, viewProjMtx, shaderParam );
 			this.Face.draw( this.shader );
 			for( let idx = 0; idx < LEG_NUM; ++idx ){
-				this.Legs[idx].draw( isRedraw, hPos, viewProjMtx, shaderParam );
+				this.Legs[idx].draw( isRedraw, hPos, this.localMtx, viewProjMtx, shaderParam );
 			}
 		}
 	}
 	
-	let Walker = new WalkerOne( gl, [ 0,1.2,0,Phoenix_OffsH ], [ 0,0,0,0,0,0 ], triangleShader );
+	let Walker = new WalkerOne( gl, [ 0,1.2,0,Phoenix_OffsH ], [ 0,0,0,0,0,0 ], triangleShader, LegBrain );
 	Walker.initParts( TriBuffer );
 	
 	
@@ -784,34 +1237,7 @@ function WalkerOne(){
 				speed *= 2;
 			}
 			moveXZ.vel = 0.0;
-			if( !keyStatus[6] ){
-				if( keyStatus[0] ){
-					if( keyStatus[4] ){	// shift
-						views.height = ( views.height > 3.9 )?4:(views.height+0.1);
-					}else{
-						moveXZ.vel = speed;
-					}
-				}
-				if( keyStatus[1] ){
-					if( keyStatus[4] ){	// shift
-						views.height = ( views.height < 0.1 )?0:(views.height-0.1);
-					}else{
-						moveXZ.vel = -speed;
-					}
-				}
-				if( keyStatus[2] ){
-					moveXZ.rot -= ROT_RATE;
-					if( moveXZ.rot > Math.PI*2 ){
-						moveXZ.rot -= Math.PI*2;
-					}
-				}
-				if( keyStatus[3] ){
-					moveXZ.rot += ROT_RATE;
-					if( moveXZ.rot < 0 ){
-						moveXZ.rot += Math.PI*2;
-					}
-				}
-			}
+			
 			// 移動偏差
 			var sinRot = Math.sin( moveXZ.rot ),
 				cosRot = Math.cos( moveXZ.rot );
@@ -833,7 +1259,8 @@ function WalkerOne(){
 		}());
 		
 		// 入力ボックス：変更適用
-		let isRedraw = false;
+//		let isRedraw = false;
+		let isRedraw = true;
 		if( cntrls.eHPos.value !== cntrls.oldHPos ){
 			cntrls.eHPosBox.value = cntrls.eHPos.value;
 		}else
@@ -974,7 +1401,7 @@ function WalkerOne(){
 			Roller.draw( triangleShader );
 		}());
 		
-/**/
+/**
 		// Walker
 		if( keyStatus[6] ){
 			if( keyStatus[0] ){	// up
@@ -991,6 +1418,32 @@ function WalkerOne(){
 			}
 			
 		}
+/**/
+		// LegBrain
+		// 移動テスト用キー入力判定 5b,6f,7_,8p,9r
+//		if( keyStatus[6] ){
+			const cmd = LegBrain.MainCmd;
+			if(( keyStatus[0] )&&( !keyBackup[0] )){	// forward
+				LegBrain.rcvCmd( CmdMvFwd, CmdListOut );
+			}
+			if(( keyStatus[1] )&&( !keyBackup[1] )){	// back
+				LegBrain.rcvCmd( CmdMvBack, CmdListOut );
+			}
+			if(( keyStatus[7] )&&( !keyBackup[7] )){	// ' '
+				LegBrain.rcvCmd( CmdMvStop, CmdListOut );
+			}
+			if(( keyStatus[8] )&&( !keyBackup[8] )){	// 'p'
+				LegBrain.rcvCmd( CmdMvPw2Pb2, CmdListOut );
+			}
+			if(( keyStatus[2] )&&( !keyBackup[2] )){	// rotate
+				LegBrain.rcvCmd( CmdMvTurnL, CmdListOut );
+			}
+			if(( keyStatus[3] )&&( !keyBackup[3] )){	// rotate
+				LegBrain.rcvCmd( CmdMvTurnR, CmdListOut );
+			}
+			keyBackup = keyStatus.concat();
+			LegBrain.checkCmdList();
+//		}
 		const rotWalker = [
 			cntrls.RotXY.value/50,
 			cntrls.RotYZ.value/50,
@@ -1004,17 +1457,13 @@ function WalkerOne(){
 			isRedraw = true;
 			cntrls.wkrPos = Walker.pos.concat();
 		}
-		Walker.walk( cntrls.Dist.value/100 );	// APIは仮
+//		Walker.walk( cntrls.Dist.value/100 );	// APIは仮
+		Walker.walk( 0.01 );	// APIは仮
 		if( isRedraw ){
 			// 八胞体切断体の作成
 			TriBuffer.initialize( triangleShader );
 		}
 		Walker.draw( isRedraw, hPos, vepMatrix, [ 0, 0, 0, light00.position, views.eyePosition, light00.ambient ] );
-		
-/*		// Leg Test
-		LegZero.walk( cntrls.Dist.value/100 );
-		LegZero.draw( isRedraw, hPos, vepMatrix, [ 0, 0, 0, light00.position, views.eyePosition, light00.ambient ] );
-/**/
 		
 		// 三角バッファの描画
 		gl.disable(gl.CULL_FACE);
@@ -1044,7 +1493,7 @@ function WalkerOne(){
 		if(( pos[0] < -8 )||( 8 < pos[0] )){
 			moveXZ.dif[0] = 0;
 		}
-		if(( pos[2] < -13 )||( 3 < pos[2] )){
+		if(( pos[2] < -8 )||( 8 < pos[2] )){
 			moveXZ.dif[1] = 0;
 		}
 	};
