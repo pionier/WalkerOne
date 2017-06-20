@@ -24,7 +24,6 @@ function WalkerOne(){
 		EquinoxFloor = {},
 		SIGHT_LENGTH = 3*2,
 		SIGHT_HEIGHT = 2,
-		ROT_RATE = 0.02,
 		VELOCITY = 0.05,
 		Roller = {},
 		modelMatrix		= mat4.identity(mat4.create()),
@@ -39,6 +38,8 @@ function WalkerOne(){
 		dvMatrix		= mat4.identity(mat4.create()),
 		dpMatrix		= mat4.identity(mat4.create()),
 		dvpMatrix		= mat4.identity(mat4.create());
+	
+	const	ROT_RATE = 0.003;
 	
 	try{
 		if( !window.WebGLRenderingContext ){
@@ -142,8 +143,9 @@ function WalkerOne(){
 	
 	// 視線ベクトル
 	views = {
-		eyePosition:	[ 0,  SIGHT_HEIGHT, SIGHT_LENGTH ],
-		lookAt:			[ 4, 0, 0 ],
+		eyePosition:	[ SIGHT_LENGTH*2,  SIGHT_HEIGHT, 0 ],
+//		eyePosition:	[ 0,  SIGHT_HEIGHT, SIGHT_LENGTH ],
+		lookAt:			[ 0, 0, -4 ],
 		height:			1
 	};
 	
@@ -833,7 +835,7 @@ function WalkerOne(){
 		
 		// 踝の位置を算出：仮
 		calcAnklePos: function( speed ){
-			let anklePos = [ this.anklePos[0], this.anklePos[1], this.anklePos[2], this.anklePos[3] ];
+			let anklePos = this.anklePos.concat();
 			
 			if( ( this.State === StateNf )||
 				( this.State === StateNb )||
@@ -842,7 +844,8 @@ function WalkerOne(){
 			){
 				const difH = 0.1;
 				let movDir = [ this.targetPos[0]-anklePos[0], 0, this.targetPos[2]-anklePos[2], this.targetPos[3]-anklePos[3] ];
-				if( (movDir[0]*movDir[0]+movDir[2]*movDir[2]+movDir[3]*movDir[3]) < speed ){
+				const mvSize = Math.sqrt( fDWL.inProd4D( movDir, movDir ) );
+				if( mvSize < speed ){
 					// 移動先に元々近ければ移動先を直接指定
 					anklePos[0] = this.targetPos[0];
 					anklePos[2] = this.targetPos[2];
@@ -859,9 +862,7 @@ function WalkerOne(){
 					}
 				}else{
 					// 移動先から遠ければ、方向づけして移動量を付加
-					let mvSize = fDWL.inProd4D( movDir, movDir );
 					movDir[0] /= mvSize, movDir[1] /= mvSize, movDir[2] /= mvSize, movDir[3] /= mvSize;
-					//movDir = fDWL.normalize3( movDir );
 					anklePos[0] += movDir[0]*speed;
 					anklePos[1] = -0.5;
 					anklePos[2] += movDir[2]*speed;
@@ -1016,6 +1017,10 @@ function WalkerOne(){
 			[ 0, 0, 0, 0 ],				// offs: vertex生成時位置オフセット
 			[ 0, 0, 0, 0, 0, 0 ]		// rot:  vertex生成時回転
 		);
+		this.Body.walk = function( pos, rot ){
+			this.setPos( pos );
+			this.setRotate( rot );
+		}
 		this.BodyPlace = [ 0,0,0,0 ];	// 基準位置
 		this.BodyPos = [ 0,0,0,0 ];		// ローカル座標変換結果
 		
@@ -1024,8 +1029,16 @@ function WalkerOne(){
 		this.Face = new fDWL.D4D.Sphere4D( gl, [ 0, 0, 0, 0 ], [ 0,0,0,0,0,0 ],  8,  8, 0.3, [ 1.0, 0.7, 0.7, 1.0 ], shader );
 		this.HeadPlace = [ 0, 0.8,  0.0, 0 ];	// 基準位置
 		this.HeadPos = [ 0,0,0,0 ];				// ローカル座標変換結果
+		this.Head.walk = function( pos, rot ){
+			this.setPos( pos );
+			this.setRotate( rot );
+		}
 		this.FacePlace = [ 0, 0.8, 0.5, 0 ];	// 基準位置
 		this.FacePos = [ 0,0,0,0 ];				// ローカル座標変換結果
+		this.Face.walk = function( pos, rot ){
+			this.setPos( pos );
+			this.setRotate( rot );
+		}
 		
 		// 脚部
 		this.Legs = [];
@@ -1062,6 +1075,9 @@ function WalkerOne(){
 		getRotate: function(){
 			return this.rot.concat();
 		},
+		getPos:	function(){
+			return this.pos.concat();
+		},
 		
 		calcRotMtx:	function(){
 			// ローカル変換行列の作成
@@ -1088,7 +1104,7 @@ function WalkerOne(){
 					mul( mx4Rots[0] );
 		},
 		
-		walk:	function( var0 ){
+		walk:	function( speed ){
 			
 			// 変換行列作成
 			this.calcRotMtx();
@@ -1097,27 +1113,44 @@ function WalkerOne(){
 			this.BodyPos = this.localMtx.mulVec( this.BodyPlace[0], this.BodyPlace[1], this.BodyPlace[2], this.BodyPlace[3] );
 			this.HeadPos = this.localMtx.mulVec( this.HeadPlace[0], this.HeadPlace[1], this.HeadPlace[2], this.HeadPlace[3] );
 			this.FacePos = this.localMtx.mulVec( this.FacePlace[0], this.FacePlace[1], this.FacePlace[2], this.FacePlace[3] );
+			
+			// 歩行
+			if(( this.brain.MainCmd === CmdMvFwd )||( this.brain.MainCmd === CmdMvBack )){
+				const vel = ( this.brain.MainCmd === CmdMvBack )?(-speed):speed;
+				this.pos = fDWL.add4D( this.pos, this.localMtx.mulVec( 0, 0, vel, 0 ) );
+			}
+			// 回転移動
+			let rotAng = 0;
+			if( this.brain.MainCmd === CmdMvTurnR ){
+				rotAng = ROT_RATE;
+				this.rot[5] += ROT_RATE;
+				if( this.rot[5] < 0 ){
+					this.rot[5] += Math.PI*2;
+				}
+			}else
+			if( this.brain.MainCmd === CmdMvTurnL ){
+				this.rot[5] -= ROT_RATE;
+				if( this.rot[5] > Math.PI*2 ){
+					this.rot[5] -= Math.PI*2;
+				}
+				rotAng = -ROT_RATE;
+			}
+			this.Body.walk( fDWL.add4D( this.pos, this.BodyPos ), this.rot );
+			this.Head.walk( fDWL.add4D( this.pos, this.HeadPos ), this.rot );
+			this.Face.walk( fDWL.add4D( this.pos, this.FacePos ), this.rot );
+			
 			for( let idx = 0; idx < LEG_NUM; ++idx ){
-				this.Legs[idx].walk( this.LegPlace[idx], this.localMtx, this.pos, this.rot.concat(), var0 );
+				this.Legs[idx].walk( this.LegPlace[idx], this.localMtx, this.pos, this.rot.concat(), speed );
 			}
 		},
 		
 		draw:	function( isRedraw, hPos, viewProjMtx, shaderParam ){
 			if( isRedraw ){
-				let bodyPos = [ this.pos[0]+this.BodyPos[0], this.pos[1]+this.BodyPos[1], this.pos[2]+this.BodyPos[2], this.pos[3]+this.BodyPos[3] ];
-				this.Body.setPos( bodyPos );
-				this.Body.setRotate( this.rot.concat() );
 				this.Body.transform();
 				this.Body.dividePylams( hPos );
 			}
-			let headPos = [ this.pos[0]+this.HeadPos[0], this.pos[1]+this.HeadPos[1], this.pos[2]+this.HeadPos[2], this.pos[3]+this.HeadPos[3] ];
-			this.Head.setPos( headPos );
-			this.Head.setRotate( this.rot );
 			this.Head.prepDraw( hPos, viewProjMtx, shaderParam );
 			this.Head.draw( this.shader );
-			let facePos = [ this.pos[0]+this.FacePos[0], this.pos[1]+this.FacePos[1], this.pos[2]+this.FacePos[2], this.pos[3]+this.FacePos[3] ];
-			this.Face.setPos( facePos );
-			this.Face.setRotate( this.rot );
 			this.Face.prepDraw( hPos, viewProjMtx, shaderParam );
 			this.Face.draw( this.shader );
 			for( let idx = 0; idx < LEG_NUM; ++idx ){
@@ -1230,6 +1263,7 @@ function WalkerOne(){
 			cntrls.prevFrameTimeStamp = currentTime;
 		}
 		
+/**
 		// キー入力から移動速度・進行方向・視点位置を修正
 		(function(){
 			var speed = VELOCITY;
@@ -1257,6 +1291,30 @@ function WalkerOne(){
 			mat4.lookAt( views.eyePosition, views.lookAt, [0, 1, 0], viewMatrix);
 			mat4.multiply( projMatrix, viewMatrix, vepMatrix );
 		}());
+/**/
+		// 視点調整：Walkerの方を向く
+		(function(){
+			const posW = Walker.getPos();
+			views.lookAt[0] = posW[0];
+			views.lookAt[1] = views.height;
+			views.lookAt[2] = posW[2];
+			// 視点調整：Walkerとの距離を話されない
+			let distV = Math.sqrt(
+						(posW[0]-views.eyePosition[0])*(posW[0]-views.eyePosition[0])+
+						(posW[2]-views.eyePosition[2])*(posW[2]-views.eyePosition[2])
+			);
+			const stdDist = 10;	// 基準距離
+			if( distV > stdDist ){
+				let rate = 1-stdDist/distV;
+				views.eyePosition[0] += (posW[0]-views.eyePosition[0])*rate;
+				views.eyePosition[2] += (posW[2]-views.eyePosition[2])*rate;
+			}
+			
+			// 視点行列を算出
+			mat4.lookAt( views.eyePosition, views.lookAt, [0, 1, 0], viewMatrix);
+			mat4.multiply( projMatrix, viewMatrix, vepMatrix );
+		}());
+/**/
 		
 		// 入力ボックス：変更適用
 //		let isRedraw = false;
@@ -1302,7 +1360,7 @@ function WalkerOne(){
 		}else
 		if( cntrls.RotXZTxt.old !== cntrls.RotXZTxt.value ){
 			cntrls.RotXZ.value = cntrls.RotXZTxt.value;
-		}else
+		}
 		if( cntrls.Dist.old !== cntrls.Dist.value ){
 			isRedraw = true;
 			cntrls.DistTxt.value = cntrls.Dist.value;
@@ -1381,7 +1439,7 @@ function WalkerOne(){
 			gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, EquinoxFloor.Ibo );
 			gl.drawElements( gl.TRIANGLES, EquinoxFloor.Data.i.length, gl.UNSIGNED_SHORT, 0 );
 		}());
-/**/
+/**
 		
 		// 注視点位置表示
 		(function(){
@@ -1400,51 +1458,33 @@ function WalkerOne(){
 			Roller.prepDraw( triangleShader, vepMatrix, [ 0, 0, 0, light00.position, views.eyePosition, light00.ambient ] );
 			Roller.draw( triangleShader );
 		}());
-		
-/**
-		// Walker
-		if( keyStatus[6] ){
-			if( keyStatus[0] ){	// up
-				Walker.pos[0] += 0.1;
-			}
-			if( keyStatus[1] ){	// down
-				Walker.pos[0] -= 0.1;
-			}
-			if( keyStatus[2] ){	// left
-				Walker.pos[2] += 0.1;
-			}
-			if( keyStatus[3] ){	// right
-				Walker.pos[2] -= 0.1;
-			}
-			
-		}
 /**/
+		
 		// LegBrain
 		// 移動テスト用キー入力判定 5b,6f,7_,8p,9r
-//		if( keyStatus[6] ){
-			const cmd = LegBrain.MainCmd;
-			if(( keyStatus[0] )&&( !keyBackup[0] )){	// forward
-				LegBrain.rcvCmd( CmdMvFwd, CmdListOut );
-			}
-			if(( keyStatus[1] )&&( !keyBackup[1] )){	// back
-				LegBrain.rcvCmd( CmdMvBack, CmdListOut );
-			}
-			if(( keyStatus[7] )&&( !keyBackup[7] )){	// ' '
-				LegBrain.rcvCmd( CmdMvStop, CmdListOut );
-			}
-			if(( keyStatus[8] )&&( !keyBackup[8] )){	// 'p'
-				LegBrain.rcvCmd( CmdMvPw2Pb2, CmdListOut );
-			}
-			if(( keyStatus[2] )&&( !keyBackup[2] )){	// rotate
-				LegBrain.rcvCmd( CmdMvTurnL, CmdListOut );
-			}
-			if(( keyStatus[3] )&&( !keyBackup[3] )){	// rotate
-				LegBrain.rcvCmd( CmdMvTurnR, CmdListOut );
-			}
-			keyBackup = keyStatus.concat();
-			LegBrain.checkCmdList();
-//		}
-		const rotWalker = [
+		const cmd = LegBrain.MainCmd;
+		if(( keyStatus[0] )&&( !keyBackup[0] )){	// forward
+			LegBrain.rcvCmd( CmdMvFwd, CmdListOut );
+		}
+		if(( keyStatus[1] )&&( !keyBackup[1] )){	// back
+			LegBrain.rcvCmd( CmdMvBack, CmdListOut );
+		}
+		if(( keyStatus[7] )&&( !keyBackup[7] )){	// ' '
+			LegBrain.rcvCmd( CmdMvStop, CmdListOut );
+		}
+		if(( keyStatus[8] )&&( !keyBackup[8] )){	// 'p'
+			LegBrain.rcvCmd( CmdMvPw2Pb2, CmdListOut );
+		}
+		if(( keyStatus[2] )&&( !keyBackup[2] )){	// rotate
+			LegBrain.rcvCmd( CmdMvTurnL, CmdListOut );
+		}
+		if(( keyStatus[3] )&&( !keyBackup[3] )){	// rotate
+			LegBrain.rcvCmd( CmdMvTurnR, CmdListOut );
+		}
+		keyBackup = keyStatus.concat();
+		LegBrain.checkCmdList();
+		
+		let rotWalker = [
 			cntrls.RotXY.value/50,
 			cntrls.RotYZ.value/50,
 			cntrls.RotYH.value/50,
@@ -1452,6 +1492,7 @@ function WalkerOne(){
 			cntrls.RotXH.value/50,
 			cntrls.RotXZ.value/50
 		];
+		rotWalker[5] = Walker.getRotate()[5];
 		Walker.setRotate( rotWalker );
 		if(( cntrls.wkrPos[0] !== Walker.pos[0] )||( cntrls.wkrPos[1] !== Walker.pos[1] )||( cntrls.wkrPos[2] !== Walker.pos[2] )||( cntrls.wkrPos[3] !== Walker.pos[3] )){
 			isRedraw = true;
