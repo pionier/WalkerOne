@@ -1050,7 +1050,7 @@ fDWL.R4D.Pylams4D.prototype = {
 	},
 	
 	// ４Ｄ変換
-	transform: function(){
+	transform: function( preMtx ){
 		"use strict";
 		let mx4Scale = new fDWL.R4D.Matrix4(),
 			mx4Rots = [
@@ -1071,6 +1071,11 @@ fDWL.R4D.Pylams4D.prototype = {
 		for( let idx = 0; idx < 6; ++idx ){
 			mx4Rots[idx].makeRot( idx, this.rotate[idx]);
 		}
+/**/
+		if( preMtx !== undefined ){
+			mx4Scale = mx4Scale.mul( preMtx );
+		}
+/**/
 		// 各Matrixの合成
 		this.mx4Rot = mx4Scale.
 				mul( mx4Rots[5] ).
@@ -1079,6 +1084,11 @@ fDWL.R4D.Pylams4D.prototype = {
 				mul( mx4Rots[2] ).
 				mul( mx4Rots[1] ).
 				mul( mx4Rots[0] );
+/**
+		if( preMtx !== undefined ){
+			this.mx4Rot = this.mx4Rot.mul( preMtx );
+		}
+/**/
 		// 各頂点のaffine変換
 		for( let idx = 0; idx < this.vertex.length; idx += 4 ){
 			vec4 = this.mx4Rot.mulVec( this.vertex[idx], this.vertex[idx+1], this.vertex[idx+2], this.vertex[idx+3] );

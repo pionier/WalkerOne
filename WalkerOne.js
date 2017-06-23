@@ -143,8 +143,9 @@ function WalkerOne(){
 	
 	// 視線ベクトル
 	views = {
-		eyePosition:	[ SIGHT_LENGTH*2,  SIGHT_HEIGHT, 0 ],
-//		eyePosition:	[ 0,  SIGHT_HEIGHT, SIGHT_LENGTH ],
+//		eyePosition:	[ 0,  SIGHT_HEIGHT, -SIGHT_LENGTH*2 ],
+//		eyePosition:	[ SIGHT_LENGTH*2,  SIGHT_HEIGHT, 0 ],
+		eyePosition:	[ 0,  SIGHT_HEIGHT, SIGHT_LENGTH*2 ],
 		lookAt:			[ 0, 0, -4 ],
 		height:			1
 	};
@@ -267,13 +268,13 @@ function WalkerOne(){
 		],
 		// 前進時の目標地点
 		FwdLegPos:	[
-			[ 2, -0.5, 0.1, 0 ], [ -2, -0.5, 0.1, 0 ], [ 2, -0.5, -0.1, 0 ], [ -2, -0.5, -0.1, 0 ],
-			[ 2, -0.5, 2.1, 0 ], [ -2, -0.5, 2.1, 0 ], [ 2, -0.5, -0.1, 0 ], [ -2, -0.5, -0.1, 0 ]
+			[ 2, -0.5, 0.1, 0 ], [ -2, -0.5, 0.1, 0 ], [ 2, -0.5, -2.1, 0 ], [ -2, -0.5, -2.1, 0 ], 
+			[ 2, -0.5, 0.1, 0 ], [ -2, -0.5, 0.1, 0 ], [ 2, -0.5, -2.1, 0 ], [ -2, -0.5, -2.1, 0 ]
 		],
 		// 後退時の目標地点
 		BckLegPos:	[
-			[ 2, -0.5, 2.1, 0 ], [ -2, -0.5, 2.1, 0 ], [ 2, -0.5, -2.1, 0 ], [ -2, -0.5, -2.1, 0 ],
-			[ 2, -0.5, 0.1, 0 ], [ -2, -0.5, 0.1, 0 ], [ 2, -0.5, -2.1, 0 ], [ -2, -0.5, -2.1, 0 ]
+			[ 2, -0.5, 2.1, 0 ], [ -2, -0.5, 2.1, 0 ], [ 2, -0.5, -0.1, 0 ], [ -2, -0.5, -0.1, 0 ],
+			[ 2, -0.5, 2.1, 0 ], [ -2, -0.5, 2.1, 0 ], [ 2, -0.5, -0.1, 0 ], [ -2, -0.5, -0.1, 0 ]
 		],
 		// 右回転時の目標地点
 		RitLegPos:	[
@@ -517,6 +518,7 @@ function WalkerOne(){
 			}
 			//return cmd;
 		},
+		
 		// コマンド受信：コマンド受信リストに登録
 		rcvCmd: function( outerCmd, lgNo ){
 			if(( CmdListLg0 <= lgNo )&&( lgNo < CmdListMax )){
@@ -595,6 +597,7 @@ function WalkerOne(){
 	};
 	
 	const LegBaseHeight = -0.5;
+//	const LEG_NUM = 8;				// 脚の本数
 	const LEG_NUM = 2;				// 脚の本数
 	// Leg of Walkers
 	let LegSet = function( legNo, pos, rotate, shader, brain ){
@@ -805,8 +808,14 @@ function WalkerOne(){
 			
 			let rotUpper = this.calcRotate( this.basePos,  this.anklePos, wkrRot );
 			let rotLower = rotUpper.concat();
+/**
+			rotLower[3] = -rotLower[3];
+			rotLower[5] = -rotLower[5];
+/**/
 			rotUpper[1] =  this.calcRotateYZ( this.basePos,  this.kneePos, this.UpperLeg.legLen );
+//			rotLower[1] =  this.calcRotateYZ( this.anklePos, this.kneePos, this.LowerLeg.legLen );
 			rotLower[1] = -this.calcRotateYZ( this.anklePos, this.kneePos, this.LowerLeg.legLen );
+/**/
 			this.UpperLeg.setRotate( rotUpper );
 			this.LowerLeg.setRotate( rotLower );
 			
@@ -924,10 +933,13 @@ function WalkerOne(){
 		},
 		// 横方向への回転角を求める
 		calcRotate: function( srcPos, dstPos, wkrRot ){
-			let rotate = wkrRot.concat();
-			// xz平面の回転を求める
+			//let rotate = wkrRot.concat();
+			let rotate = [ 0,0,0,0,0,0 ];
+			// 確実の偏差
 			const difX = dstPos[0]-srcPos[0];
 			const difZ = dstPos[2]-srcPos[2];
+			const difH = dstPos[3]-srcPos[3];
+			// xz平面の回転を求める
 			let xz = Math.atan2( difZ, difX );
 			// 方向調整
 			xz += Math.PI*3/2;
@@ -938,8 +950,12 @@ function WalkerOne(){
 			// xh平面
 			
 			
+/**/
 			// zh平面
-			
+//			let zh = Math.atan2( difZ, difH );
+			let zh = Math.atan2( difH, difZ );
+			rotate[3] += zh;
+/**/
 			
 			return rotate;			// [ xy, yz, yh, zh, xh, xz ]
 		},
@@ -949,9 +965,25 @@ function WalkerOne(){
 			
 			// 描画
 			if( isRedraw ){
+				
+/**
+				let mx4RotLeg = new fDWL.R4D.Matrix4();
+				let rot = this.UpperLeg.getRotate();
+				mx4RotLeg.makeRot( 1, rot[1] );
+				rot[1] = 0;
+				this.UpperLeg.setRotate( rot );
+				this.UpperLeg.transform( mx4RotLeg );
+/**/
+				this.UpperLeg.transform( wkrMtx );
+/**
 				this.UpperLeg.transform();
+/**/
 				this.UpperLeg.dividePylams( hPos );
+/**/
+				this.LowerLeg.transform( wkrMtx );
+/**
 				this.LowerLeg.transform();
+/**/
 				this.LowerLeg.dividePylams( hPos );
 				this.Foot.transform();
 				this.Foot.dividePylams( hPos );
@@ -1043,8 +1075,12 @@ function WalkerOne(){
 		// 脚部
 		this.Legs = [];
 		this.LegPlace = [
-			[ 0.5,LegBaseHeight,0.5,0 ], [ -0.5,LegBaseHeight,0.5,0 ], [ 0,0,0,0 ], [ 0,0,0,0 ],
-			[ 0,0,0,0 ], [ 0,0,0,0 ], [ 0,0,0,0 ], [ 0,0,0,0 ]
+			[ 0.5,LegBaseHeight, 0.5, 0 ], [ -0.5,LegBaseHeight, 0.5, 0 ],
+			[ 0.5,LegBaseHeight,-0.5, 0 ], [ -0.5,LegBaseHeight,-0.5, 0 ],
+//			[ 0.5,LegBaseHeight, 0.5, 0.5 ], [ -0.5,LegBaseHeight, 0.5, 0.5 ],
+//			[ 0.5,LegBaseHeight,-0.5, 0.5 ], [ -0.5,LegBaseHeight,-0.5, 0.5 ],
+			[ 0.5,LegBaseHeight, 0.5,-0.5 ], [ -0.5,LegBaseHeight, 0.5,-0.5 ],
+			[ 0.5,LegBaseHeight,-0.5,-0.5 ], [ -0.5,LegBaseHeight,-0.5,-0.5 ]
 		];
 		this.LegPos = [];
 		for( let idx = 0; idx < LEG_NUM; ++idx ){
@@ -1485,14 +1521,14 @@ function WalkerOne(){
 		LegBrain.checkCmdList();
 		
 		let rotWalker = [
-			cntrls.RotXY.value/50,
-			cntrls.RotYZ.value/50,
-			cntrls.RotYH.value/50,
-			cntrls.RotZH.value/50,
-			cntrls.RotXH.value/50,
-			cntrls.RotXZ.value/50
+			cntrls.RotXY.value/100,
+			cntrls.RotYZ.value/100,
+			cntrls.RotYH.value/100,
+			cntrls.RotZH.value/100,
+			cntrls.RotXH.value/100,
+			cntrls.RotXZ.value/100
 		];
-		rotWalker[5] = Walker.getRotate()[5];
+		//rotWalker[5] = Walker.getRotate()[5];		// XZ回転の制御
 		Walker.setRotate( rotWalker );
 		if(( cntrls.wkrPos[0] !== Walker.pos[0] )||( cntrls.wkrPos[1] !== Walker.pos[1] )||( cntrls.wkrPos[2] !== Walker.pos[2] )||( cntrls.wkrPos[3] !== Walker.pos[3] )){
 			isRedraw = true;
