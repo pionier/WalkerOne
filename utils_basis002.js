@@ -206,15 +206,15 @@ fDWL.R4D.Matrix4.prototype = {
 			this.aa[11] = -sinX;
 			this.aa[14] = sinX;
 			break;
-		case 4:		// XH
-			this.aa[0] = this.aa[15] = cosX;
-			this.aa[3] = -sinX;
-			this.aa[12] = sinX;
-			break;
-		case 5:		// XZ
+		case 4:		// XZ
 			this.aa[0] = this.aa[10] = cosX;
 			this.aa[2] = -sinX;
 			this.aa[8] = sinX;
+			break;
+		case 5:		// XH
+			this.aa[0] = this.aa[15] = cosX;
+			this.aa[3] = -sinX;
+			this.aa[12] = sinX;
 			break;
 		default:
 			break;
@@ -504,7 +504,7 @@ fDWL.R4D.Pylams4D = function( gl, prg, pos, rotate, scale, vertex, color, center
 	this.gl = gl;
 	this.prg = prg;
 	this.pos = pos;					// [ x, y, z, h ]
-	this.rotate = rotate;			// [ xy, yz, yh, zh, xh, xz ]
+	this.rotate = rotate;			// [ xy, yz, yh, zh, xz, xh ]
 	this.scale = [ 1,1,1,1 ];		// [ x, y, z, h ]：対ワールドスケールはここでは設定しない
 	this.mx4Rot = new fDWL.R4D.Matrix4();
 	
@@ -1071,11 +1071,10 @@ fDWL.R4D.Pylams4D.prototype = {
 		for( let idx = 0; idx < 6; ++idx ){
 			mx4Rots[idx].makeRot( idx, this.rotate[idx]);
 		}
-/**/
+		// 外部からの座標変換があれば適用
 		if( preMtx !== undefined ){
 			mx4Scale = mx4Scale.mul( preMtx );
 		}
-/**/
 		// 各Matrixの合成
 		this.mx4Rot = mx4Scale.
 				mul( mx4Rots[5] ).
@@ -1084,11 +1083,7 @@ fDWL.R4D.Pylams4D.prototype = {
 				mul( mx4Rots[2] ).
 				mul( mx4Rots[1] ).
 				mul( mx4Rots[0] );
-/**
-		if( preMtx !== undefined ){
-			this.mx4Rot = this.mx4Rot.mul( preMtx );
-		}
-/**/
+		
 		// 各頂点のaffine変換
 		for( let idx = 0; idx < this.vertex.length; idx += 4 ){
 			vec4 = this.mx4Rot.mulVec( this.vertex[idx], this.vertex[idx+1], this.vertex[idx+2], this.vertex[idx+3] );
@@ -1124,7 +1119,7 @@ fDWL.R4D.Pylams4D.prototype = {
 	// 回転の設定
 	setRotate: function( rotate ){
 		"use strict";
-		// rotate = [ xy, yz, yh, zh, xh, xz ]
+		// rotate = [ xy, yz, yh, zh, xz, xh ]
 		this.rotate = rotate;
 	},
 	getRotate: function(){
