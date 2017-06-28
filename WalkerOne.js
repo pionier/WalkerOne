@@ -264,31 +264,38 @@ function WalkerOne(){
 		// 足の基準位置
 		StdLegPos:	[
 /* Anker */
-			[ 1.5, -0.5, 1.1, 1.5 ], [ -1.5, -0.5, 1.1, 1.5 ], [ 1.5, -0.5, -1.1, 0 ], [ -1.5, -0.5, -1.1, 0 ],
-//			[ 2, -0.5, 1.1, 0 ], [ -2, -0.5, 1.1, 0 ], [ 2, -0.5, -1.1, 0 ], [ -2, -0.5, -1.1, 0 ],
-			[ 2, -0.5, 1.1, 0 ], [ -2, -0.5, 1.1, 0 ], [ 2, -0.5, -1.1, 0 ], [ -2, -0.5, -1.1, 0 ]
+			[ 1.5, -0.5, 1.1, 1.5 ], [ -1.5, -0.5, 1.1, 1.5 ], [ 1.5, -0.5, -1.1, 1.5 ], [ -1.5, -0.5, -1.1, 1.5 ],
+			[ 1.5, -0.5, 1.1,-1.5 ], [ -1.5, -0.5, 1.1,-1.5 ], [ 1.5, -0.5, -1.1,-1.5 ], [ -1.5, -0.5, -1.1,-1.5 ]
 		],
 		// 前進時の目標地点
 		FwdLegPos:	[
-			[ 1.5, -0.5, 0.1, 1.5 ], [ -1.5, -0.5, 0.1,1.5 ], [ 1.5, -0.5, -2.1, 0 ], [ -1.5, -0.5, -2.1, 0 ], 
-//			[ 2, -0.5, 0.1, 0 ], [ -2, -0.5, 0.1, 0 ], [ 2, -0.5, -2.1, 0 ], [ -2, -0.5, -2.1, 0 ], 
-			[ 2, -0.5, 0.1, 0 ], [ -2, -0.5, 0.1, 0 ], [ 2, -0.5, -2.1, 0 ], [ -2, -0.5, -2.1, 0 ]
+			[ 1.5, -0.5, 0.1, 1.5 ], [ -1.5, -0.5, 0.1, 1.5 ], [ 1.5, -0.5, -2.1, 1.5 ], [ -1.5, -0.5, -2.1, 1.5 ], 
+			[ 1.5, -0.5, 0.1,-1.5 ], [ -1.5, -0.5, 0.1,-1.5 ], [ 1.5, -0.5, -2.1,-1.5 ], [ -1.5, -0.5, -2.1,-1.5 ]
 		],
 		// 後退時の目標地点
 		BckLegPos:	[
-			[ 1.5, -0.5, 2.1, 1.5 ], [ -1.5, -0.5, 2.1, 1.5 ], [ 1.5, -0.5, -0.1, 0 ], [ -1.5, -0.5, -0.1, 0 ],
-//			[ 2, -0.5, 2.1, 0 ], [ -2, -0.5, 2.1, 0 ], [ 2, -0.5, -0.1, 0 ], [ -2, -0.5, -0.1, 0 ],
-			[ 2, -0.5, 2.1, 0 ], [ -2, -0.5, 2.1, 0 ], [ 2, -0.5, -0.1, 0 ], [ -2, -0.5, -0.1, 0 ]
+			[ 1.5, -0.5, 2.1, 1.5 ], [ -1.5, -0.5, 2.1, 1.5 ], [ 1.5, -0.5, -0.1, 1.5 ], [ -1.5, -0.5, -0.1, 1.5 ],
+			[ 1.5, -0.5, 2.1,-1.5 ], [ -1.5, -0.5, 2.1,-1.5 ], [ 1.5, -0.5, -0.1,-1.5 ], [ -1.5, -0.5, -0.1,-1.5 ]
 		],
-		// 右回転時の目標地点
-		RitLegPos:	[
-			[ 2+stdLPX, -0.5, 1.1+stdLPZ, 0 ], [ -2+stdLPX, -0.5, 1.1-stdLPZ, 0 ], [ 2-stdLPX, -0.5, -1.1+stdLPZ, 0 ], [ -2-stdLPX, -0.5, -1.1-stdLPZ, 0 ],
-			[ 2+stdLPX, -0.5, 1.1+stdLPZ, 0 ], [ -2+stdLPX, -0.5, 1.1-stdLPZ, 0 ], [ 2-stdLPX, -0.5, -1.1+stdLPZ, 0 ], [ -2-stdLPX, -0.5, -1.1-stdLPZ, 0 ]
+		// X-Z平面右回転時の目標地点
+		RitLegPosX:	[
+			[ 1.5+stdLPX, -0.5, 1.1+stdLPZ, 1.5 ], [ -1.5+stdLPX, -0.5, 1.1-stdLPZ, 1.5 ], [ 1.5-stdLPX, -0.5, -1.1+stdLPZ, 1.5 ], [ -1.5-stdLPX, -0.5, -1.1-stdLPZ, 1.5 ],
+			[ 1.5+stdLPX, -0.5, 1.1+stdLPZ,-1.5 ], [ -1.5+stdLPX, -0.5, 1.1-stdLPZ,-1.5 ], [ 1.5-stdLPX, -0.5, -1.1+stdLPZ,-1.5 ], [ -1.5-stdLPX, -0.5, -1.1-stdLPZ,-1.5 ]
 		],
-		// 左回転時の目標地点
-		LftLegPos:	[
-			[ 2-stdLPX, -0.5, 1.1-stdLPZ, 0 ], [ -2-stdLPX, -0.5, 1.1+stdLPZ, 0 ], [ 2+stdLPX, -0.5, -1.1-stdLPZ, 0 ], [ -2+stdLPX, -0.5, -1.1+stdLPZ, 0 ],
-			[ 2-stdLPX, -0.5, 1.1-stdLPZ, 0 ], [ -2-stdLPX, -0.5, 1.1+stdLPZ, 0 ], [ 2+stdLPX, -0.5, -1.1-stdLPZ, 0 ], [ -2+stdLPX, -0.5, -1.1+stdLPZ, 0 ]
+		// X-Z平面左回転時の目標地点
+		LftLegPosX:	[
+			[ 1.5-stdLPX, -0.5, 1.1-stdLPZ, 1.5 ], [ -1.5-stdLPX, -0.5, 1.1+stdLPZ, 1.5 ], [ 1.5+stdLPX, -0.5, -1.1-stdLPZ, 1.5 ], [ -1.5+stdLPX, -0.5, -1.1+stdLPZ, 1.5 ],
+			[ 1.5-stdLPX, -0.5, 1.1-stdLPZ,-1.5 ], [ -1.5-stdLPX, -0.5, 1.1+stdLPZ,-1.5 ], [ 1.5+stdLPX, -0.5, -1.1-stdLPZ,-1.5 ], [ -1.5+stdLPX, -0.5, -1.1+stdLPZ,-1.5 ]
+		],
+		// H-Z平面右回転時の目標地点
+		RitLegPosH:	[
+			[ 1.5+stdLPX, -0.5, 1.1+stdLPZ, 1.5 ], [ -1.5+stdLPX, -0.5, 1.1-stdLPZ, 1.5 ], [ 1.5-stdLPX, -0.5, -1.1+stdLPZ, 1.5 ], [ -1.5-stdLPX, -0.5, -1.1-stdLPZ, 1.5 ],
+			[ 1.5+stdLPX, -0.5, 1.1+stdLPZ,-1.5 ], [ -1.5+stdLPX, -0.5, 1.1-stdLPZ,-1.5 ], [ 1.5-stdLPX, -0.5, -1.1+stdLPZ,-1.5 ], [ -1.5-stdLPX, -0.5, -1.1-stdLPZ,-1.5 ]
+		],
+		// H-Z平面左回転時の目標地点
+		LftLegPosH:	[
+			[ 1.5, -0.5, 1.1-stdLPZ, 1.5-stdLPX ], [ -1.5, -0.5, 1.1+stdLPZ, 1.5-stdLPX ], [ 1.5, -0.5, -1.1-stdLPZ, 1.5+stdLPX ], [ -1.5, -0.5, -1.1+stdLPZ, 1.5+stdLPX ],
+			[ 1.5, -0.5, 1.1-stdLPZ,-1.5-stdLPX ], [ -1.5, -0.5, 1.1+stdLPZ,-1.5-stdLPX ], [ 1.5, -0.5, -1.1-stdLPZ,-1.5+stdLPX ], [ -1.5, -0.5, -1.1+stdLPZ,-1.5+stdLPX ]
 		],
 /*
 			[ 0.5,LegBaseHeight, 0.5, 0.5 ], [ -0.5,LegBaseHeight, 0.5, 0.5 ],
@@ -515,10 +522,10 @@ function WalkerOne(){
 					cmd[1] = this.BckLegPos[lgNo][0], cmd[2] = this.BckLegPos[lgNo][1], cmd[3] = this.BckLegPos[lgNo][2], cmd[4] = this.BckLegPos[lgNo][3];
 				}else
 				if( trgPos === LgMvTargPosR ){
-					cmd[1] = this.RitLegPos[lgNo][0], cmd[2] = this.RitLegPos[lgNo][1], cmd[3] = this.RitLegPos[lgNo][2], cmd[4] = this.RitLegPos[lgNo][3];
+					cmd[1] = this.RitLegPosX[lgNo][0], cmd[2] = this.RitLegPosX[lgNo][1], cmd[3] = this.RitLegPosX[lgNo][2], cmd[4] = this.RitLegPosX[lgNo][3];
 				}else
 				if( trgPos === LgMvTargPosL ){
-					cmd[1] = this.LftLegPos[lgNo][0], cmd[2] = this.LftLegPos[lgNo][1], cmd[3] = this.LftLegPos[lgNo][2], cmd[4] = this.LftLegPos[lgNo][3];
+					cmd[1] = this.LftLegPosX[lgNo][0], cmd[2] = this.LftLegPosX[lgNo][1], cmd[3] = this.LftLegPosX[lgNo][2], cmd[4] = this.LftLegPosX[lgNo][3];
 				}else{		// LgMvTargPosW
 					cmd[1] = this.StdLegPos[lgNo][0], cmd[2] = this.StdLegPos[lgNo][1], cmd[3] = this.StdLegPos[lgNo][2], cmd[4] = this.StdLegPos[lgNo][3];
 				}
@@ -608,8 +615,8 @@ function WalkerOne(){
 	
 /* Anker */
 	const LegBaseHeight = -0.5;
-//	const LEG_NUM = 8;				// 脚の本数
-	const LEG_NUM = 2;				// 脚の本数
+	const LEG_NUM = 8;				// 脚の本数
+//	const LEG_NUM = 2;				// 脚の本数
 	// Leg of Walkers
 	let LegSet = function( legNo, pos, rotate, shader, brain ){
 		this.id = legNo;
@@ -641,7 +648,7 @@ function WalkerOne(){
 				 0.1, -1, 0.1,  0.1,  -0.1, -1, 0.1,  0.1,    0.1, -1, -0.1,  0.1,   -0.1, -1, -0.1,  0.1,
 				-0.1,  1, 0.1, -0.1,   0.1,  1, 0.1, -0.1,   -0.1,  1, -0.1, -0.1,    0.1,  1, -0.1, -0.1,
 				 0.1, -1, 0.1, -0.1,  -0.1, -1, 0.1, -0.1,    0.1, -1, -0.1, -0.1,   -0.1, -1, -0.1, -0.1
-				,0, -1, 0, 0,  0, 1, 0, 0
+				//,0, -1, 0, 0,  0, 1, 0, 0
 			],
 			// color
 			[ 192, 192, 192, 255 ],
@@ -681,7 +688,7 @@ function WalkerOne(){
 				 0.1, -1, 0.1,  0.1,  -0.1, -1, 0.1,  0.1,    0.1, -1, -0.1,  0.1,   -0.1, -1, -0.1,  0.1,
 				-0.1,  1, 0.1, -0.1,   0.1,  1, 0.1, -0.1,   -0.1,  1, -0.1, -0.1,    0.1,  1, -0.1, -0.1,
 				 0.1, -1, 0.1, -0.1,  -0.1, -1, 0.1, -0.1,    0.1, -1, -0.1, -0.1,   -0.1, -1, -0.1, -0.1
-				,0, -1, 0, 0,  0, 1, 0, 0
+				//,0, -1, 0, 0,  0, 1, 0, 0
 			],
 			// color
 			[ 192, 192, 192, 255 ],
@@ -1063,10 +1070,10 @@ function WalkerOne(){
 		// 脚部
 		this.Legs = [];
 		this.LegPlace = [
-			[ 0.5,LegBaseHeight, 0.5, 0 ], [ -0.5,LegBaseHeight, 0.5, 0 ],
-			[ 0.5,LegBaseHeight,-0.5, 0 ], [ -0.5,LegBaseHeight,-0.5, 0 ],
-//			[ 0.5,LegBaseHeight, 0.5, 0.5 ], [ -0.5,LegBaseHeight, 0.5, 0.5 ],
-//			[ 0.5,LegBaseHeight,-0.5, 0.5 ], [ -0.5,LegBaseHeight,-0.5, 0.5 ],
+//			[ 0.5,LegBaseHeight, 0.5, 0 ], [ -0.5,LegBaseHeight, 0.5, 0 ],
+//			[ 0.5,LegBaseHeight,-0.5, 0 ], [ -0.5,LegBaseHeight,-0.5, 0 ],
+			[ 0.5,LegBaseHeight, 0.5, 0.5 ], [ -0.5,LegBaseHeight, 0.5, 0.5 ],
+			[ 0.5,LegBaseHeight,-0.5, 0.5 ], [ -0.5,LegBaseHeight,-0.5, 0.5 ],
 			[ 0.5,LegBaseHeight, 0.5,-0.5 ], [ -0.5,LegBaseHeight, 0.5,-0.5 ],
 			[ 0.5,LegBaseHeight,-0.5,-0.5 ], [ -0.5,LegBaseHeight,-0.5,-0.5 ]
 		];
