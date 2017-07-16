@@ -40,6 +40,7 @@ function WalkerOne(){
 		dvpMatrix		= mat4.identity(mat4.create());
 	
 	const	ROT_RATE = 0.003;
+	let floorPos = [ 0, 0, 0 ];
 	
 	try{
 		if( !window.WebGLRenderingContext ){
@@ -92,7 +93,7 @@ function WalkerOne(){
 			if( keyname === keyEventNames.space ){
 				keyStatus[7] = true;
 			}
-			if( keyname === keyEventNames.keyB ){
+			if( keyname === keyEventNames.keyR ){
 				keyStatus[8] = true;
 			}
 		}
@@ -124,7 +125,7 @@ function WalkerOne(){
 			if( keyname === keyEventNames.space ){
 				keyStatus[7] = false;
 			}
-			if( keyname === keyEventNames.keyP ){
+			if( keyname === keyEventNames.keyR ){
 				keyStatus[8] = false;
 			}
 		}
@@ -297,12 +298,6 @@ function WalkerOne(){
 			[ 1.5, -0.5, 1.1-stdLPZ, 1.5-stdLPX ], [ -1.5, -0.5, 1.1+stdLPZ, 1.5-stdLPX ], [ 1.5, -0.5, -1.1-stdLPZ, 1.5+stdLPX ], [ -1.5, -0.5, -1.1+stdLPZ, 1.5+stdLPX ],
 			[ 1.5, -0.5, 1.1-stdLPZ,-1.5-stdLPX ], [ -1.5, -0.5, 1.1+stdLPZ,-1.5-stdLPX ], [ 1.5, -0.5, -1.1-stdLPZ,-1.5+stdLPX ], [ -1.5, -0.5, -1.1+stdLPZ,-1.5+stdLPX ]
 		],
-/*
-			[ 0.5,LegBaseHeight, 0.5, 0.5 ], [ -0.5,LegBaseHeight, 0.5, 0.5 ],
-			[ 0.5,LegBaseHeight,-0.5, 0.5 ], [ -0.5,LegBaseHeight,-0.5, 0.5 ],
-			[ 0.5,LegBaseHeight, 0.5,-0.5 ], [ -0.5,LegBaseHeight, 0.5,-0.5 ],
-			[ 0.5,LegBaseHeight,-0.5,-0.5 ], [ -0.5,LegBaseHeight,-0.5,-0.5 ]
-*/
 		
 		// 各脚へのコマンド発行
 		// outerCmd: 受け取ったコマンド(動作終了通知も含む)
@@ -589,6 +584,11 @@ function WalkerOne(){
 				this.CmdList[lgNo] = CmdNop;
 			}
 		},
+		// 動作を初期化
+		resetPos:	function(){
+			this.rcvCmd( CmdMvStop, CmdListOut );
+		},
+		
 		// 脚のペアの相手を返す
 		getPairNo: function( lgNo ){
 			let pairNo = 0;
@@ -786,6 +786,18 @@ function WalkerOne(){
 			this.LowerLeg.setTriBuffer( primBuffer );
 			this.Foot.transform();
 			this.Foot.setTriBuffer( primBuffer );
+		},
+		
+		// 位置・角度等再設定
+		resetPos:	function( param ){
+			this.State = StateW;								// 脚の移動モード(State)
+			this.targetPos = this.brain.StdLegPos[this.id];
+			this.srcPos = this.brain.StdLegPos[this.id];
+			
+			/*
+			this.anklePos = this.brain.StdLegPos[legNo].concat();
+			this.kneePos  = this.calcKneePos();
+			*/
 		},
 		
 		setPos: function( pos ){
@@ -1050,6 +1062,10 @@ function WalkerOne(){
 		}
 		this.BodyPlace = [ 0,0,0,0 ];	// 基準位置
 		this.BodyPos = [ 0,0,0,0 ];		// ローカル座標変換結果
+		this.Body.resetPos = function( param ){
+			this.setPos( param.pos );
+			this.setRotate( param.rotate );
+		}
 		
 		// 頭部＆顔
 		this.Head = new fDWL.D4D.Sphere4D( gl, [ 0, 0, 0, 0 ], [ 0,0,0,0,0,0 ], 16, 16, 0.5, [ 0.7, 0.7, 0.7, 1.0 ], shader );
@@ -1060,11 +1076,19 @@ function WalkerOne(){
 			this.setPos( pos );
 			this.setRotate( rot );
 		}
+		this.Head.resetPos = function( param ){
+			this.setPos( param.pos );
+			this.setRotate( param.rotate );
+		}
 		this.FacePlace = [ 0, 0.8, 0.5, 0 ];	// 基準位置
 		this.FacePos = [ 0,0,0,0 ];				// ローカル座標変換結果
 		this.Face.walk = function( pos, rot ){
 			this.setPos( pos );
 			this.setRotate( rot );
+		}
+		this.Face.resetPos = function( param ){
+			this.setPos( param.pos );
+			this.setRotate( param.rotate );
 		}
 		
 		// 脚部
@@ -1079,10 +1103,15 @@ function WalkerOne(){
 		];
 		this.LegPos = [];
 		for( let idx = 0; idx < LEG_NUM; ++idx ){
-			
 			this.Legs[idx] = new LegSet( idx, this.LegPlace[idx], [ 0,0,0,0,0,0 ], triangleShader, this.brain );
 			this.brain.LegObj[idx] = this.Legs[idx];
+			
+			this.Legs[idx].resetPos = function( param ){
+				//this.setPos( param.pos );
+				
+			}
 		}
+		this.resetParam = {};
 	}
 	
 	WalkerOne.prototype = {
@@ -1098,6 +1127,29 @@ function WalkerOne(){
 			for( let idx = 0; idx < LEG_NUM; ++idx ){
 				this.Legs[idx].initParts( primBuffer );
 			}
+		},
+		
+		// 位置・角度等再設定
+		resetPos:	function(){
+			this.pos = this.resetParam.pos;
+			this.rot = this.resetParam.rotate;
+			this.Body.resetPos( this.resetParam );
+			this.Head.resetPos( this.resetParam );
+			this.Face.resetPos( this.resetParam );
+			this.brain.resetPos();
+			for( let idx = 0; idx < LEG_NUM; ++idx ){
+				this.Legs[idx].resetPos( this.resetParam );
+			}
+			//this.isReset = this.resetParam.isReset;
+		},
+		isReset:	function(){
+			return false;
+		},
+		setIsReset:	function( resetFunc ){
+			this.isReset = resetFunc;
+		},
+		setResetParam: function( param ){
+			this.resetParam = param;
 		},
 		
 		setRotate:	function( rotate ){
@@ -1193,6 +1245,18 @@ function WalkerOne(){
 	let Walker = new WalkerOne( gl, [ 0,1.2,0,Phoenix_OffsH ], [ 0,0,0,0,0,0 ], triangleShader, LegBrain );
 	Walker.initParts( TriBuffer );
 	
+	Walker.setResetParam({
+		pos:	[ 0,1.2,0,Phoenix_OffsH ],
+		rotate:	[ 0,0,0,0,0,0 ],
+		isReset: function(){
+			
+			return false;
+		}
+	});
+	Walker.setIsReset( function( isReset ){
+		
+		return isReset;
+	});
 	
 	// テクスチャ無し地面
 	EquinoxFloor.Data = fDWL.tiledFloor( 1.0, 16, [0.1, 0.1, 0.1, 1.0], [1.0, 1.0, 1.0, 1.0 ] );
@@ -1453,8 +1517,14 @@ function WalkerOne(){
 			var vbo = [],
 				attL = [],
 				attS = [];
+			// Walkerに合わせて位置補正
+			const posWk = Walker.getPos();
+			floorPos[0] = Math.floor( posWk[0]/2 )*2;
+			floorPos[2] = Math.floor( posWk[2]/2 )*2;
+			
 			mat4.identity( modelMatrix );
-			mat4.translate( modelMatrix, [0.0, 0.0, 0.0], modelMatrix );
+			//mat4.translate( modelMatrix, [0.0, 0.0, 0.0], modelMatrix );
+			mat4.translate( modelMatrix, floorPos, modelMatrix );
 			mat4.multiply( vepMatrix, modelMatrix, mvpMatrix );
 			mat4.inverse( modelMatrix, invMatrix);
 			triangleShader.setProgram( [ modelMatrix, mvpMatrix, invMatrix, light00.position, views.eyePosition, light00.ambient ] );
@@ -1492,6 +1562,7 @@ function WalkerOne(){
 /**/
 		
 		// LegBrain
+		let isReset = false;
 		// 移動テスト用キー入力判定 5b,6f,7_,8p,9r
 		const cmd = LegBrain.MainCmd;
 		if(( keyStatus[0] )&&( !keyBackup[0] )){	// forward
@@ -1503,8 +1574,8 @@ function WalkerOne(){
 		if(( keyStatus[7] )&&( !keyBackup[7] )){	// ' '
 			LegBrain.rcvCmd( CmdMvStop, CmdListOut );
 		}
-		if(( keyStatus[8] )&&( !keyBackup[8] )){	// 'p'
-			LegBrain.rcvCmd( CmdMvPw2Pb2, CmdListOut );
+		if(( keyStatus[8] )&&( !keyBackup[8] )){	// 'r'
+			isReset = true;
 		}
 		if(( keyStatus[2] )&&( !keyBackup[2] )){	// rotate
 			LegBrain.rcvCmd( CmdMvTurnL, CmdListOut );
@@ -1512,6 +1583,16 @@ function WalkerOne(){
 		if(( keyStatus[3] )&&( !keyBackup[3] )){	// rotate
 			LegBrain.rcvCmd( CmdMvTurnR, CmdListOut );
 		}
+		// 視野からはみ出たときの処理
+		const wkPos = Walker.getPos();
+		const ViewOffset = 2.6;
+		if( wkPos[3] < hPos-ViewOffset ){
+			LegBrain.rcvCmd( CmdMvFwd, CmdListOut );
+		}else
+		if( wkPos[3] > hPos+ViewOffset ){
+			LegBrain.rcvCmd( CmdMvBack, CmdListOut );
+		}
+		
 		keyBackup = keyStatus.concat();
 		LegBrain.checkCmdList();
 		
@@ -1523,7 +1604,20 @@ function WalkerOne(){
 			cntrls.RotXZ.value/100,
 			cntrls.RotXH.value/100
 		];
-		//rotWalker[5] = Walker.getRotate()[5];		// XZ回転の制御
+		
+		if( Walker.isReset( isReset ) ){
+			Walker.resetPos();
+			views.eyePosition = [ 0,  SIGHT_HEIGHT, SIGHT_LENGTH*2 ];
+			views.lookAt = [ 0, 0, -4 ];
+			return;
+		}
+		
+		rotWalker[0] = Walker.getRotate()[0];		// XY回転の制御
+		rotWalker[1] = Walker.getRotate()[1];		// YZ回転の制御
+		rotWalker[2] = Walker.getRotate()[2];		// YH回転の制御
+		//rotWalker[3] = Walker.getRotate()[3];		// ZH回転の制御
+		//rotWalker[4] = Walker.getRotate()[4];		// XZ回転の制御
+		rotWalker[5] = Walker.getRotate()[5];		// XZ回転の制御
 		Walker.setRotate( rotWalker );
 		if(( cntrls.wkrPos[0] !== Walker.pos[0] )||( cntrls.wkrPos[1] !== Walker.pos[1] )||( cntrls.wkrPos[2] !== Walker.pos[2] )||( cntrls.wkrPos[3] !== Walker.pos[3] )){
 			isRedraw = true;
