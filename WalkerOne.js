@@ -4,28 +4,53 @@
 //	http://www7b.biglobe.ne.jp/~fdw
 //==================================================================================
 
+// glMatrix v0.9.5
+glMatrixArrayType=typeof Float32Array!="undefined"?Float32Array:typeof WebGLFloatArray!="undefined"?WebGLFloatArray:Array;var vec3={};vec3.create=function(a){var b=new glMatrixArrayType(3);if(a){b[0]=a[0];b[1]=a[1];b[2]=a[2]}return b};vec3.set=function(a,b){b[0]=a[0];b[1]=a[1];b[2]=a[2];return b};vec3.add=function(a,b,c){if(!c||a==c){a[0]+=b[0];a[1]+=b[1];a[2]+=b[2];return a}c[0]=a[0]+b[0];c[1]=a[1]+b[1];c[2]=a[2]+b[2];return c};
+vec3.subtract=function(a,b,c){if(!c||a==c){a[0]-=b[0];a[1]-=b[1];a[2]-=b[2];return a}c[0]=a[0]-b[0];c[1]=a[1]-b[1];c[2]=a[2]-b[2];return c};vec3.negate=function(a,b){b||(b=a);b[0]=-a[0];b[1]=-a[1];b[2]=-a[2];return b};vec3.scale=function(a,b,c){if(!c||a==c){a[0]*=b;a[1]*=b;a[2]*=b;return a}c[0]=a[0]*b;c[1]=a[1]*b;c[2]=a[2]*b;return c};
+vec3.normalize=function(a,b){b||(b=a);var c=a[0],d=a[1],e=a[2],g=Math.sqrt(c*c+d*d+e*e);if(g){if(g==1){b[0]=c;b[1]=d;b[2]=e;return b}}else{b[0]=0;b[1]=0;b[2]=0;return b}g=1/g;b[0]=c*g;b[1]=d*g;b[2]=e*g;return b};vec3.cross=function(a,b,c){c||(c=a);var d=a[0],e=a[1];a=a[2];var g=b[0],f=b[1];b=b[2];c[0]=e*b-a*f;c[1]=a*g-d*b;c[2]=d*f-e*g;return c};vec3.length=function(a){var b=a[0],c=a[1];a=a[2];return Math.sqrt(b*b+c*c+a*a)};vec3.dot=function(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]};
+vec3.direction=function(a,b,c){c||(c=a);var d=a[0]-b[0],e=a[1]-b[1];a=a[2]-b[2];b=Math.sqrt(d*d+e*e+a*a);if(!b){c[0]=0;c[1]=0;c[2]=0;return c}b=1/b;c[0]=d*b;c[1]=e*b;c[2]=a*b;return c};vec3.lerp=function(a,b,c,d){d||(d=a);d[0]=a[0]+c*(b[0]-a[0]);d[1]=a[1]+c*(b[1]-a[1]);d[2]=a[2]+c*(b[2]-a[2]);return d};vec3.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+"]"};var mat3={};
+mat3.create=function(a){var b=new glMatrixArrayType(9);if(a){b[0]=a[0];b[1]=a[1];b[2]=a[2];b[3]=a[3];b[4]=a[4];b[5]=a[5];b[6]=a[6];b[7]=a[7];b[8]=a[8];b[9]=a[9]}return b};mat3.set=function(a,b){b[0]=a[0];b[1]=a[1];b[2]=a[2];b[3]=a[3];b[4]=a[4];b[5]=a[5];b[6]=a[6];b[7]=a[7];b[8]=a[8];return b};mat3.identity=function(a){a[0]=1;a[1]=0;a[2]=0;a[3]=0;a[4]=1;a[5]=0;a[6]=0;a[7]=0;a[8]=1;return a};
+mat3.transpose=function(a,b){if(!b||a==b){var c=a[1],d=a[2],e=a[5];a[1]=a[3];a[2]=a[6];a[3]=c;a[5]=a[7];a[6]=d;a[7]=e;return a}b[0]=a[0];b[1]=a[3];b[2]=a[6];b[3]=a[1];b[4]=a[4];b[5]=a[7];b[6]=a[2];b[7]=a[5];b[8]=a[8];return b};mat3.toMat4=function(a,b){b||(b=mat4.create());b[0]=a[0];b[1]=a[1];b[2]=a[2];b[3]=0;b[4]=a[3];b[5]=a[4];b[6]=a[5];b[7]=0;b[8]=a[6];b[9]=a[7];b[10]=a[8];b[11]=0;b[12]=0;b[13]=0;b[14]=0;b[15]=1;return b};
+mat3.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+", "+a[4]+", "+a[5]+", "+a[6]+", "+a[7]+", "+a[8]+"]"};var mat4={};mat4.create=function(a){var b=new glMatrixArrayType(16);if(a){b[0]=a[0];b[1]=a[1];b[2]=a[2];b[3]=a[3];b[4]=a[4];b[5]=a[5];b[6]=a[6];b[7]=a[7];b[8]=a[8];b[9]=a[9];b[10]=a[10];b[11]=a[11];b[12]=a[12];b[13]=a[13];b[14]=a[14];b[15]=a[15]}return b};
+mat4.set=function(a,b){b[0]=a[0];b[1]=a[1];b[2]=a[2];b[3]=a[3];b[4]=a[4];b[5]=a[5];b[6]=a[6];b[7]=a[7];b[8]=a[8];b[9]=a[9];b[10]=a[10];b[11]=a[11];b[12]=a[12];b[13]=a[13];b[14]=a[14];b[15]=a[15];return b};mat4.identity=function(a){a[0]=1;a[1]=0;a[2]=0;a[3]=0;a[4]=0;a[5]=1;a[6]=0;a[7]=0;a[8]=0;a[9]=0;a[10]=1;a[11]=0;a[12]=0;a[13]=0;a[14]=0;a[15]=1;return a};
+mat4.transpose=function(a,b){if(!b||a==b){var c=a[1],d=a[2],e=a[3],g=a[6],f=a[7],h=a[11];a[1]=a[4];a[2]=a[8];a[3]=a[12];a[4]=c;a[6]=a[9];a[7]=a[13];a[8]=d;a[9]=g;a[11]=a[14];a[12]=e;a[13]=f;a[14]=h;return a}b[0]=a[0];b[1]=a[4];b[2]=a[8];b[3]=a[12];b[4]=a[1];b[5]=a[5];b[6]=a[9];b[7]=a[13];b[8]=a[2];b[9]=a[6];b[10]=a[10];b[11]=a[14];b[12]=a[3];b[13]=a[7];b[14]=a[11];b[15]=a[15];return b};
+mat4.determinant=function(a){var b=a[0],c=a[1],d=a[2],e=a[3],g=a[4],f=a[5],h=a[6],i=a[7],j=a[8],k=a[9],l=a[10],o=a[11],m=a[12],n=a[13],p=a[14];a=a[15];return m*k*h*e-j*n*h*e-m*f*l*e+g*n*l*e+j*f*p*e-g*k*p*e-m*k*d*i+j*n*d*i+m*c*l*i-b*n*l*i-j*c*p*i+b*k*p*i+m*f*d*o-g*n*d*o-m*c*h*o+b*n*h*o+g*c*p*o-b*f*p*o-j*f*d*a+g*k*d*a+j*c*h*a-b*k*h*a-g*c*l*a+b*f*l*a};
+mat4.inverse=function(a,b){b||(b=a);var c=a[0],d=a[1],e=a[2],g=a[3],f=a[4],h=a[5],i=a[6],j=a[7],k=a[8],l=a[9],o=a[10],m=a[11],n=a[12],p=a[13],r=a[14],s=a[15],A=c*h-d*f,B=c*i-e*f,t=c*j-g*f,u=d*i-e*h,v=d*j-g*h,w=e*j-g*i,x=k*p-l*n,y=k*r-o*n,z=k*s-m*n,C=l*r-o*p,D=l*s-m*p,E=o*s-m*r,q=1/(A*E-B*D+t*C+u*z-v*y+w*x);b[0]=(h*E-i*D+j*C)*q;b[1]=(-d*E+e*D-g*C)*q;b[2]=(p*w-r*v+s*u)*q;b[3]=(-l*w+o*v-m*u)*q;b[4]=(-f*E+i*z-j*y)*q;b[5]=(c*E-e*z+g*y)*q;b[6]=(-n*w+r*t-s*B)*q;b[7]=(k*w-o*t+m*B)*q;b[8]=(f*D-h*z+j*x)*q;
+b[9]=(-c*D+d*z-g*x)*q;b[10]=(n*v-p*t+s*A)*q;b[11]=(-k*v+l*t-m*A)*q;b[12]=(-f*C+h*y-i*x)*q;b[13]=(c*C-d*y+e*x)*q;b[14]=(-n*u+p*B-r*A)*q;b[15]=(k*u-l*B+o*A)*q;return b};mat4.toRotationMat=function(a,b){b||(b=mat4.create());b[0]=a[0];b[1]=a[1];b[2]=a[2];b[3]=a[3];b[4]=a[4];b[5]=a[5];b[6]=a[6];b[7]=a[7];b[8]=a[8];b[9]=a[9];b[10]=a[10];b[11]=a[11];b[12]=0;b[13]=0;b[14]=0;b[15]=1;return b};
+mat4.toMat3=function(a,b){b||(b=mat3.create());b[0]=a[0];b[1]=a[1];b[2]=a[2];b[3]=a[4];b[4]=a[5];b[5]=a[6];b[6]=a[8];b[7]=a[9];b[8]=a[10];return b};mat4.toInverseMat3=function(a,b){var c=a[0],d=a[1],e=a[2],g=a[4],f=a[5],h=a[6],i=a[8],j=a[9],k=a[10],l=k*f-h*j,o=-k*g+h*i,m=j*g-f*i,n=c*l+d*o+e*m;if(!n)return null;n=1/n;b||(b=mat3.create());b[0]=l*n;b[1]=(-k*d+e*j)*n;b[2]=(h*d-e*f)*n;b[3]=o*n;b[4]=(k*c-e*i)*n;b[5]=(-h*c+e*g)*n;b[6]=m*n;b[7]=(-j*c+d*i)*n;b[8]=(f*c-d*g)*n;return b};
+mat4.multiply=function(a,b,c){c||(c=a);var d=a[0],e=a[1],g=a[2],f=a[3],h=a[4],i=a[5],j=a[6],k=a[7],l=a[8],o=a[9],m=a[10],n=a[11],p=a[12],r=a[13],s=a[14];a=a[15];var A=b[0],B=b[1],t=b[2],u=b[3],v=b[4],w=b[5],x=b[6],y=b[7],z=b[8],C=b[9],D=b[10],E=b[11],q=b[12],F=b[13],G=b[14];b=b[15];c[0]=A*d+B*h+t*l+u*p;c[1]=A*e+B*i+t*o+u*r;c[2]=A*g+B*j+t*m+u*s;c[3]=A*f+B*k+t*n+u*a;c[4]=v*d+w*h+x*l+y*p;c[5]=v*e+w*i+x*o+y*r;c[6]=v*g+w*j+x*m+y*s;c[7]=v*f+w*k+x*n+y*a;c[8]=z*d+C*h+D*l+E*p;c[9]=z*e+C*i+D*o+E*r;c[10]=z*
+g+C*j+D*m+E*s;c[11]=z*f+C*k+D*n+E*a;c[12]=q*d+F*h+G*l+b*p;c[13]=q*e+F*i+G*o+b*r;c[14]=q*g+F*j+G*m+b*s;c[15]=q*f+F*k+G*n+b*a;return c};mat4.multiplyVec3=function(a,b,c){c||(c=b);var d=b[0],e=b[1];b=b[2];c[0]=a[0]*d+a[4]*e+a[8]*b+a[12];c[1]=a[1]*d+a[5]*e+a[9]*b+a[13];c[2]=a[2]*d+a[6]*e+a[10]*b+a[14];return c};
+mat4.multiplyVec4=function(a,b,c){c||(c=b);var d=b[0],e=b[1],g=b[2];b=b[3];c[0]=a[0]*d+a[4]*e+a[8]*g+a[12]*b;c[1]=a[1]*d+a[5]*e+a[9]*g+a[13]*b;c[2]=a[2]*d+a[6]*e+a[10]*g+a[14]*b;c[3]=a[3]*d+a[7]*e+a[11]*g+a[15]*b;return c};
+mat4.translate=function(a,b,c){var d=b[0],e=b[1];b=b[2];if(!c||a==c){a[12]=a[0]*d+a[4]*e+a[8]*b+a[12];a[13]=a[1]*d+a[5]*e+a[9]*b+a[13];a[14]=a[2]*d+a[6]*e+a[10]*b+a[14];a[15]=a[3]*d+a[7]*e+a[11]*b+a[15];return a}var g=a[0],f=a[1],h=a[2],i=a[3],j=a[4],k=a[5],l=a[6],o=a[7],m=a[8],n=a[9],p=a[10],r=a[11];c[0]=g;c[1]=f;c[2]=h;c[3]=i;c[4]=j;c[5]=k;c[6]=l;c[7]=o;c[8]=m;c[9]=n;c[10]=p;c[11]=r;c[12]=g*d+j*e+m*b+a[12];c[13]=f*d+k*e+n*b+a[13];c[14]=h*d+l*e+p*b+a[14];c[15]=i*d+o*e+r*b+a[15];return c};
+mat4.scale=function(a,b,c){var d=b[0],e=b[1];b=b[2];if(!c||a==c){a[0]*=d;a[1]*=d;a[2]*=d;a[3]*=d;a[4]*=e;a[5]*=e;a[6]*=e;a[7]*=e;a[8]*=b;a[9]*=b;a[10]*=b;a[11]*=b;return a}c[0]=a[0]*d;c[1]=a[1]*d;c[2]=a[2]*d;c[3]=a[3]*d;c[4]=a[4]*e;c[5]=a[5]*e;c[6]=a[6]*e;c[7]=a[7]*e;c[8]=a[8]*b;c[9]=a[9]*b;c[10]=a[10]*b;c[11]=a[11]*b;c[12]=a[12];c[13]=a[13];c[14]=a[14];c[15]=a[15];return c};
+mat4.rotate=function(a,b,c,d){var e=c[0],g=c[1];c=c[2];var f=Math.sqrt(e*e+g*g+c*c);if(!f)return null;if(f!=1){f=1/f;e*=f;g*=f;c*=f}var h=Math.sin(b),i=Math.cos(b),j=1-i;b=a[0];f=a[1];var k=a[2],l=a[3],o=a[4],m=a[5],n=a[6],p=a[7],r=a[8],s=a[9],A=a[10],B=a[11],t=e*e*j+i,u=g*e*j+c*h,v=c*e*j-g*h,w=e*g*j-c*h,x=g*g*j+i,y=c*g*j+e*h,z=e*c*j+g*h;e=g*c*j-e*h;g=c*c*j+i;if(d){if(a!=d){d[12]=a[12];d[13]=a[13];d[14]=a[14];d[15]=a[15]}}else d=a;d[0]=b*t+o*u+r*v;d[1]=f*t+m*u+s*v;d[2]=k*t+n*u+A*v;d[3]=l*t+p*u+B*
+v;d[4]=b*w+o*x+r*y;d[5]=f*w+m*x+s*y;d[6]=k*w+n*x+A*y;d[7]=l*w+p*x+B*y;d[8]=b*z+o*e+r*g;d[9]=f*z+m*e+s*g;d[10]=k*z+n*e+A*g;d[11]=l*z+p*e+B*g;return d};mat4.rotateX=function(a,b,c){var d=Math.sin(b);b=Math.cos(b);var e=a[4],g=a[5],f=a[6],h=a[7],i=a[8],j=a[9],k=a[10],l=a[11];if(c){if(a!=c){c[0]=a[0];c[1]=a[1];c[2]=a[2];c[3]=a[3];c[12]=a[12];c[13]=a[13];c[14]=a[14];c[15]=a[15]}}else c=a;c[4]=e*b+i*d;c[5]=g*b+j*d;c[6]=f*b+k*d;c[7]=h*b+l*d;c[8]=e*-d+i*b;c[9]=g*-d+j*b;c[10]=f*-d+k*b;c[11]=h*-d+l*b;return c};
+mat4.rotateY=function(a,b,c){var d=Math.sin(b);b=Math.cos(b);var e=a[0],g=a[1],f=a[2],h=a[3],i=a[8],j=a[9],k=a[10],l=a[11];if(c){if(a!=c){c[4]=a[4];c[5]=a[5];c[6]=a[6];c[7]=a[7];c[12]=a[12];c[13]=a[13];c[14]=a[14];c[15]=a[15]}}else c=a;c[0]=e*b+i*-d;c[1]=g*b+j*-d;c[2]=f*b+k*-d;c[3]=h*b+l*-d;c[8]=e*d+i*b;c[9]=g*d+j*b;c[10]=f*d+k*b;c[11]=h*d+l*b;return c};
+mat4.rotateZ=function(a,b,c){var d=Math.sin(b);b=Math.cos(b);var e=a[0],g=a[1],f=a[2],h=a[3],i=a[4],j=a[5],k=a[6],l=a[7];if(c){if(a!=c){c[8]=a[8];c[9]=a[9];c[10]=a[10];c[11]=a[11];c[12]=a[12];c[13]=a[13];c[14]=a[14];c[15]=a[15]}}else c=a;c[0]=e*b+i*d;c[1]=g*b+j*d;c[2]=f*b+k*d;c[3]=h*b+l*d;c[4]=e*-d+i*b;c[5]=g*-d+j*b;c[6]=f*-d+k*b;c[7]=h*-d+l*b;return c};
+mat4.frustum=function(a,b,c,d,e,g,f){f||(f=mat4.create());var h=b-a,i=d-c,j=g-e;f[0]=e*2/h;f[1]=0;f[2]=0;f[3]=0;f[4]=0;f[5]=e*2/i;f[6]=0;f[7]=0;f[8]=(b+a)/h;f[9]=(d+c)/i;f[10]=-(g+e)/j;f[11]=-1;f[12]=0;f[13]=0;f[14]=-(g*e*2)/j;f[15]=0;return f};mat4.perspective=function(a,b,c,d,e){a=c*Math.tan(a*Math.PI/360);b=a*b;return mat4.frustum(-b,b,-a,a,c,d,e)};
+mat4.ortho=function(a,b,c,d,e,g,f){f||(f=mat4.create());var h=b-a,i=d-c,j=g-e;f[0]=2/h;f[1]=0;f[2]=0;f[3]=0;f[4]=0;f[5]=2/i;f[6]=0;f[7]=0;f[8]=0;f[9]=0;f[10]=-2/j;f[11]=0;f[12]=-(a+b)/h;f[13]=-(d+c)/i;f[14]=-(g+e)/j;f[15]=1;return f};
+mat4.lookAt=function(a,b,c,d){d||(d=mat4.create());var e=a[0],g=a[1];a=a[2];var f=c[0],h=c[1],i=c[2];c=b[1];var j=b[2];if(e==b[0]&&g==c&&a==j)return mat4.identity(d);var k,l,o,m;c=e-b[0];j=g-b[1];b=a-b[2];m=1/Math.sqrt(c*c+j*j+b*b);c*=m;j*=m;b*=m;k=h*b-i*j;i=i*c-f*b;f=f*j-h*c;if(m=Math.sqrt(k*k+i*i+f*f)){m=1/m;k*=m;i*=m;f*=m}else f=i=k=0;h=j*f-b*i;l=b*k-c*f;o=c*i-j*k;if(m=Math.sqrt(h*h+l*l+o*o)){m=1/m;h*=m;l*=m;o*=m}else o=l=h=0;d[0]=k;d[1]=h;d[2]=c;d[3]=0;d[4]=i;d[5]=l;d[6]=j;d[7]=0;d[8]=f;d[9]=
+o;d[10]=b;d[11]=0;d[12]=-(k*e+i*g+f*a);d[13]=-(h*e+l*g+o*a);d[14]=-(c*e+j*g+b*a);d[15]=1;return d};mat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+", "+a[4]+", "+a[5]+", "+a[6]+", "+a[7]+", "+a[8]+", "+a[9]+", "+a[10]+", "+a[11]+", "+a[12]+", "+a[13]+", "+a[14]+", "+a[15]+"]"};quat4={};quat4.create=function(a){var b=new glMatrixArrayType(4);if(a){b[0]=a[0];b[1]=a[1];b[2]=a[2];b[3]=a[3]}return b};quat4.set=function(a,b){b[0]=a[0];b[1]=a[1];b[2]=a[2];b[3]=a[3];return b};
+quat4.calculateW=function(a,b){var c=a[0],d=a[1],e=a[2];if(!b||a==b){a[3]=-Math.sqrt(Math.abs(1-c*c-d*d-e*e));return a}b[0]=c;b[1]=d;b[2]=e;b[3]=-Math.sqrt(Math.abs(1-c*c-d*d-e*e));return b};quat4.inverse=function(a,b){if(!b||a==b){a[0]*=1;a[1]*=1;a[2]*=1;return a}b[0]=-a[0];b[1]=-a[1];b[2]=-a[2];b[3]=a[3];return b};quat4.length=function(a){var b=a[0],c=a[1],d=a[2];a=a[3];return Math.sqrt(b*b+c*c+d*d+a*a)};
+quat4.normalize=function(a,b){b||(b=a);var c=a[0],d=a[1],e=a[2],g=a[3],f=Math.sqrt(c*c+d*d+e*e+g*g);if(f==0){b[0]=0;b[1]=0;b[2]=0;b[3]=0;return b}f=1/f;b[0]=c*f;b[1]=d*f;b[2]=e*f;b[3]=g*f;return b};quat4.multiply=function(a,b,c){c||(c=a);var d=a[0],e=a[1],g=a[2];a=a[3];var f=b[0],h=b[1],i=b[2];b=b[3];c[0]=d*b+a*f+e*i-g*h;c[1]=e*b+a*h+g*f-d*i;c[2]=g*b+a*i+d*h-e*f;c[3]=a*b-d*f-e*h-g*i;return c};
+quat4.multiplyVec3=function(a,b,c){c||(c=b);var d=b[0],e=b[1],g=b[2];b=a[0];var f=a[1],h=a[2];a=a[3];var i=a*d+f*g-h*e,j=a*e+h*d-b*g,k=a*g+b*e-f*d;d=-b*d-f*e-h*g;c[0]=i*a+d*-b+j*-h-k*-f;c[1]=j*a+d*-f+k*-b-i*-h;c[2]=k*a+d*-h+i*-f-j*-b;return c};quat4.toMat3=function(a,b){b||(b=mat3.create());var c=a[0],d=a[1],e=a[2],g=a[3],f=c+c,h=d+d,i=e+e,j=c*f,k=c*h;c=c*i;var l=d*h;d=d*i;e=e*i;f=g*f;h=g*h;g=g*i;b[0]=1-(l+e);b[1]=k-g;b[2]=c+h;b[3]=k+g;b[4]=1-(j+e);b[5]=d-f;b[6]=c-h;b[7]=d+f;b[8]=1-(j+l);return b};
+quat4.toMat4=function(a,b){b||(b=mat4.create());var c=a[0],d=a[1],e=a[2],g=a[3],f=c+c,h=d+d,i=e+e,j=c*f,k=c*h;c=c*i;var l=d*h;d=d*i;e=e*i;f=g*f;h=g*h;g=g*i;b[0]=1-(l+e);b[1]=k-g;b[2]=c+h;b[3]=0;b[4]=k+g;b[5]=1-(j+e);b[6]=d-f;b[7]=0;b[8]=c-h;b[9]=d+f;b[10]=1-(j+l);b[11]=0;b[12]=0;b[13]=0;b[14]=0;b[15]=1;return b};quat4.slerp=function(a,b,c,d){d||(d=a);var e=c;if(a[0]*b[0]+a[1]*b[1]+a[2]*b[2]+a[3]*b[3]<0)e=-1*c;d[0]=1-c*a[0]+e*b[0];d[1]=1-c*a[1]+e*b[1];d[2]=1-c*a[2]+e*b[2];d[3]=1-c*a[3]+e*b[3];return d};
+quat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+"]"};
+
 //============================================================
 //	OnLoad
 //============================================================
 
 function WalkerOne(){
 	"use strict";
-	var cnvs = document.getElementById('canvas'),
+	let cnvs = document.getElementById('canvas'),
 		cntrls = {},
 		gl = {},
 		views = {},
 		light00 = {},
 		triangleShader = {},
 		TriBuffer = {},
-		TRI_BUFFER_SIZE = 4096,
-		WalkerBody_SCALE = 1,
-		Phoenix_OffsY = 0,
-		Phoenix_OffsH = 3,
 		EquinoxFloor = {},
-		SIGHT_LENGTH = 3*2,
-		SIGHT_HEIGHT = 2,
-		VELOCITY = 0.05,
-		Roller = {},
 		modelMatrix		= mat4.identity(mat4.create()),
 		viewMatrix		= mat4.identity(mat4.create()),
 		eyeMatrix		= mat4.identity(mat4.create()),
@@ -39,7 +64,14 @@ function WalkerOne(){
 		dpMatrix		= mat4.identity(mat4.create()),
 		dvpMatrix		= mat4.identity(mat4.create());
 	
-	const	ROT_RATE = 0.003;
+	const TRI_BUFFER_SIZE = 4096,
+			WalkerBody_SCALE = 1,
+			SIGHT_LENGTH = 3*2,
+			SIGHT_HEIGHT = 2,
+			VELOCITY = 0.01,
+			ROT_RATE = 0.003;
+	const	walkerInitRot = [ 0,0,0,0.15,0.80,0 ];
+	const	walkerInitPos = [ 0,1.2,0,3 ];
 	let floorPos = [ 0, 0, 0 ];
 	
 	try{
@@ -144,8 +176,6 @@ function WalkerOne(){
 	
 	// 視線ベクトル
 	views = {
-//		eyePosition:	[ 0,  SIGHT_HEIGHT, -SIGHT_LENGTH*2 ],
-//		eyePosition:	[ SIGHT_LENGTH*2,  SIGHT_HEIGHT, 0 ],
 		eyePosition:	[ 0,  SIGHT_HEIGHT, SIGHT_LENGTH*2 ],
 		lookAt:			[ 0, 0, -4 ],
 		height:			1
@@ -198,7 +228,6 @@ function WalkerOne(){
 	};
 	TriBuffer = new fDWL.R4D.TriangleBuffer( gl, TRI_BUFFER_SIZE );
 	
-/**/
 	// 足の移動目標座標
 	const LgMvTargPos0 = 0;
 	const LgMvTargPosW = 1;
@@ -264,7 +293,6 @@ function WalkerOne(){
 		CmdList:	[ CmdNop, CmdNop, CmdNop, CmdNop, CmdNop, CmdNop, CmdNop, CmdNop, CmdNop ],
 		// 足の基準位置
 		StdLegPos:	[
-/* Anker */
 			[ 1.5, -0.5, 1.1, 1.5 ], [ -1.5, -0.5, 1.1, 1.5 ], [ 1.5, -0.5, -1.1, 1.5 ], [ -1.5, -0.5, -1.1, 1.5 ],
 			[ 1.5, -0.5, 1.1,-1.5 ], [ -1.5, -0.5, 1.1,-1.5 ], [ 1.5, -0.5, -1.1,-1.5 ], [ -1.5, -0.5, -1.1,-1.5 ]
 		],
@@ -613,10 +641,8 @@ function WalkerOne(){
 		}
 	};
 	
-/* Anker */
 	const LegBaseHeight = -0.5;
 	const LEG_NUM = 8;				// 脚の本数
-//	const LEG_NUM = 2;				// 脚の本数
 	// Leg of Walkers
 	let LegSet = function( legNo, pos, rotate, shader, brain ){
 		this.id = legNo;
@@ -636,7 +662,6 @@ function WalkerOne(){
 		this.Base  = new fDWL.D4D.Sphere4D( gl, [ 0,0,0,0 ], [ 0,0,0,0,0,0 ], 8, 8, 0.2, [ 0.8, 0.8, 1.0, 1.0 ], shader );
 		this.Knee  = new fDWL.D4D.Sphere4D( gl, [ 0,0,0,0 ], [ 0,0,0,0,0,0 ], 8, 8, 0.2, [ 0.8, 0.8, 1.0, 1.0 ], shader );
 		this.Ankle = new fDWL.D4D.Sphere4D( gl, [ 0,0,0,0 ], [ 0,0,0,0,0,0 ], 8, 8, 0.2, [ 0.8, 0.8, 1.0, 1.0 ], shader );
-/**/
 		this.UpperLeg = new fDWL.R4D.Pylams4D(
 			gl,
 			shader.prg,
@@ -676,7 +701,6 @@ function WalkerOne(){
 			[ 0, 1, 0, 0 ],				// offs: vertex生成時位置オフセット
 			[ 0, 0, 0, 0, 0, 0 ]		// rot:  vertex生成時回転
 		);
-/**/
 		this.LowerLeg = new fDWL.R4D.Pylams4D(
 			gl,
 			shader.prg,
@@ -756,7 +780,6 @@ function WalkerOne(){
 			[ 0, -0.1, 0, 0 ],				// offs: vertex生成時位置オフセット
 			[ 0, 0, 0, 0, 0, 0 ]		// rot:  vertex生成時回転
 		);		
-/**/
 		// 足の長さを指定
 		this.UpperLeg.legLen = 2.0;
 		this.LowerLeg.legLen = 2.0;
@@ -793,11 +816,6 @@ function WalkerOne(){
 			this.State = StateW;								// 脚の移動モード(State)
 			this.targetPos = this.brain.StdLegPos[this.id];
 			this.srcPos = this.brain.StdLegPos[this.id];
-			
-			/*
-			this.anklePos = this.brain.StdLegPos[legNo].concat();
-			this.kneePos  = this.calcKneePos();
-			*/
 		},
 		
 		setPos: function( pos ){
@@ -842,7 +860,6 @@ function WalkerOne(){
 			let rotLower = rotUpper.concat();
 			rotUpper[1] =  this.calcRotateYZ( this.basePos,  this.kneePos, this.UpperLeg.legLen );
 			rotLower[1] = -this.calcRotateYZ( this.anklePos, this.kneePos, this.LowerLeg.legLen );
-/**/
 			this.UpperLeg.setRotate( rotUpper );
 			this.LowerLeg.setRotate( rotLower );
 			
@@ -965,8 +982,6 @@ function WalkerOne(){
 			const difX = dstPos[0]-srcPos[0];
 			const difZ = dstPos[2]-srcPos[2];
 			const difH = dstPos[3]-srcPos[3];
-/* Anker */
-/**/
 			
 			// z-xh回転を求める
 			let lenXH = Math.sqrt( difX*difX + difH*difH );
@@ -980,7 +995,6 @@ function WalkerOne(){
 			// xh回転を求める
 			let xh = Math.atan2( difH, difX );
 			rotate[5] = xh;
-/**/
 			return rotate;			// [ xy, yz, yh, zh, xz, xh ]
 		},
 		
@@ -1094,8 +1108,6 @@ function WalkerOne(){
 		// 脚部
 		this.Legs = [];
 		this.LegPlace = [
-//			[ 0.5,LegBaseHeight, 0.5, 0 ], [ -0.5,LegBaseHeight, 0.5, 0 ],
-//			[ 0.5,LegBaseHeight,-0.5, 0 ], [ -0.5,LegBaseHeight,-0.5, 0 ],
 			[ 0.5,LegBaseHeight, 0.5, 0.5 ], [ -0.5,LegBaseHeight, 0.5, 0.5 ],
 			[ 0.5,LegBaseHeight,-0.5, 0.5 ], [ -0.5,LegBaseHeight,-0.5, 0.5 ],
 			[ 0.5,LegBaseHeight, 0.5,-0.5 ], [ -0.5,LegBaseHeight, 0.5,-0.5 ],
@@ -1242,12 +1254,12 @@ function WalkerOne(){
 		}
 	}
 	
-	let Walker = new WalkerOne( gl, [ 0,1.2,0,Phoenix_OffsH ], [ 0,0,0,0,0,0 ], triangleShader, LegBrain );
+	let Walker = new WalkerOne( gl, walkerInitPos.concat(), walkerInitRot.concat(), triangleShader, LegBrain );
 	Walker.initParts( TriBuffer );
 	
 	Walker.setResetParam({
-		pos:	[ 0,1.2,0,Phoenix_OffsH ],
-		rotate:	[ 0,0,0,0,0,0 ],
+		pos:	walkerInitPos,
+		rotate:	walkerInitRot,
 		isReset: function(){
 			
 			return false;
@@ -1267,21 +1279,6 @@ function WalkerOne(){
 	];
 	EquinoxFloor.Ibo = fDWL.WGL.createIbo( gl, EquinoxFloor.Data.i );
 	
-	// 注視点表示
-	(function(){
-		"use strict";
-		var data = [],
-			dataType = [ gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.TRIANGLE_FAN ],
-			idx = 0,
-			id2 = 0,
-			offsY = 0;
-		data[0] = fDWL.cylinder( 8, 0.2, 0.5, [ 1.0, 1.0, 1.0, 1.0],  [ 0, 0, 0 ], [ 0, 0, Math.PI/2 ] );
-		data[1] = fDWL.corn( 8, 0.2, 0.5, [ 1.0, 1.0, 1.0, 1.0], 1.0, [ 0,  0.1, 0 ], [ 0, 0, Math.PI/2 ] );
-		data[2] = fDWL.corn( 8, 0.2, 0.5, [ 1.0, 1.0, 1.0, 1.0], 1.0, [ 0,  0.1, 0 ], [ 0, 0, Math.PI*3/2 ] );
-		Roller = new fDWL.Objs3D( gl, [ 0, 0, 0 ], [ 0, 0, 0 ], [ 1, 1, 1 ], data, dataType );
-		Roller.height = 0.5;
-	}());
-	
 	// ビューxプロジェクション座標変換行列
 	mat4.lookAt( views.eyePosition, views.lookAt, [0, 1, 0], viewMatrix);
 	mat4.perspective(45, cnvs.width / cnvs.height, 0.1, 100, projMatrix);
@@ -1295,44 +1292,10 @@ function WalkerOne(){
 	cntrls.nbrOfFramesForFps = 0;
 	cntrls.prevFrameTimeStamp = Date.now();
 	cntrls.fpsCounter = document.getElementById("fps");
-
 	cntrls.eHPos = document.getElementById('H_Pos');
 	cntrls.eHPosBox = document.getElementById('H_PosTxt');
-	
-	cntrls.RotXY = document.getElementById('RotXY');
-	cntrls.RotYZ = document.getElementById('RotYZ');
-	cntrls.RotYH = document.getElementById('RotYH');
-	cntrls.RotZH = document.getElementById('RotZH');
-	cntrls.RotXH = document.getElementById('RotXH');
-	cntrls.RotXZ = document.getElementById('RotXZ');
-	cntrls.Dist = document.getElementById('Dist');
-	
-	cntrls.RotXYTxt = document.getElementById('RotXYTxt');
-	cntrls.RotYZTxt = document.getElementById('RotYZTxt');
-	cntrls.RotYHTxt = document.getElementById('RotYHTxt');
-	cntrls.RotZHTxt = document.getElementById('RotZHTxt');
-	cntrls.RotXHTxt = document.getElementById('RotXHTxt');
-	cntrls.RotXZTxt = document.getElementById('RotXZTxt');
-	cntrls.DistTxt = document.getElementById('DistTxt');
-	
 	cntrls.oldHPos = (-100);
 	cntrls.oldHPosBox = cntrls.eHPos.value;
-	
-	cntrls.RotXY.old = cntrls.RotXY.value;
-	cntrls.RotYZ.old = cntrls.RotYZ.value;
-	cntrls.RotYH.old = cntrls.RotYH.value;
-	cntrls.RotZH.old = cntrls.RotZH.value;
-	cntrls.RotXH.old = cntrls.RotXH.value;
-	cntrls.RotXZ.old = cntrls.RotXZ.value;
-	cntrls.Dist.old = cntrls.Dist.value;
-	
-	cntrls.RotXYTxt.old = cntrls.RotXY.value;
-	cntrls.RotYZTxt.old = cntrls.RotYZ.value;
-	cntrls.RotYHTxt.old = cntrls.RotYH.value;
-	cntrls.RotZHTxt.old = cntrls.RotZH.value;
-	cntrls.RotXHTxt.old = cntrls.RotXH.value;
-	cntrls.RotXZTxt.old = cntrls.RotXZ.value;
-	cntrls.DistTxt.old = cntrls.DistTxt.value;
 	
 	cntrls.wkrPos = [ 0,0,0,0 ];
 	
@@ -1341,7 +1304,7 @@ function WalkerOne(){
 	// 恒常ループ
 	function draw(){
 		"use strict";
-		var	texAndRate = [],
+		let	texAndRate = [],
 			hPos = 0,
 			eyeRad = 0,
 			currentTime = 0,
@@ -1358,58 +1321,45 @@ function WalkerOne(){
 			cntrls.prevFrameTimeStamp = currentTime;
 		}
 		
-/**
-		// キー入力から移動速度・進行方向・視点位置を修正
-		(function(){
-			var speed = VELOCITY;
-			if( keyStatus[5] ){
-				speed *= 2;
-			}
-			moveXZ.vel = 0.0;
-			
-			// 移動偏差
-			var sinRot = Math.sin( moveXZ.rot ),
-				cosRot = Math.cos( moveXZ.rot );
-			moveXZ.dif[0] = -sinRot*moveXZ.vel;
-			moveXZ.dif[1] =  cosRot*moveXZ.vel;
-			// 衝突判定による位置調整を行う
-			checkCollision( views.lookAt, moveXZ );
-			views.lookAt[0] += moveXZ.dif[0];
-			views.lookAt[1] = views.height;
-			views.lookAt[2] += moveXZ.dif[1];
-			// 視点位置
-			views.eyePosition[0] = views.lookAt[0] + sinRot*SIGHT_LENGTH;
-			views.eyePosition[1] = views.lookAt[1] +        SIGHT_HEIGHT - views.height;
-			views.eyePosition[2] = views.lookAt[2] - cosRot*SIGHT_LENGTH;
-			
-			// 視点行列を算出
-			mat4.lookAt( views.eyePosition, views.lookAt, [0, 1, 0], viewMatrix);
-			mat4.multiply( projMatrix, viewMatrix, vepMatrix );
-		}());
-/**/
 		// 視点調整：Walkerの方を向く
 		(function(){
 			const posW = Walker.getPos();
 			views.lookAt[0] = posW[0];
 			views.lookAt[1] = views.height;
 			views.lookAt[2] = posW[2];
-			// 視点調整：Walkerとの距離を話されない
-			let distV = Math.sqrt(
-						(posW[0]-views.eyePosition[0])*(posW[0]-views.eyePosition[0])+
-						(posW[2]-views.eyePosition[2])*(posW[2]-views.eyePosition[2])
-			);
+			const difX = posW[0]-views.eyePosition[0];
+			const difZ = posW[2]-views.eyePosition[2]
+			// 視点調整：Walkerとの距離を離されない
+			let distV = Math.sqrt( difX*difX + difZ*difZ );
 			const stdDist = 10;	// 基準距離
 			if( distV > stdDist ){
 				let rate = 1-stdDist/distV;
-				views.eyePosition[0] += (posW[0]-views.eyePosition[0])*rate;
-				views.eyePosition[2] += (posW[2]-views.eyePosition[2])*rate;
+				views.eyePosition[0] += difX*rate;
+				views.eyePosition[2] += difZ*rate;
+			}
+			// 左右キーで視点を回転
+			let viewRot = 0;
+			const VIEW_ROT = 0.02;
+			if( keyStatus[2] ){	// left
+				viewRot -= VIEW_ROT;
+			}else
+			if( keyStatus[3] ){	// right
+				viewRot += VIEW_ROT;
+			}
+			if( viewRot ){
+				// 視点位置を回転
+				const sinR = Math.sin( viewRot );
+				const cosR = Math.cos( viewRot );
+				const tmpX = cosR * difX - sinR * difZ;
+				const tmpZ = sinR * difX + cosR * difZ;
+				views.eyePosition[0] += tmpX - difX;
+				views.eyePosition[2] += tmpZ - difZ;
 			}
 			
 			// 視点行列を算出
 			mat4.lookAt( views.eyePosition, views.lookAt, [0, 1, 0], viewMatrix);
 			mat4.multiply( projMatrix, viewMatrix, vepMatrix );
 		}());
-/**/
 		
 		// 入力ボックス：変更適用
 //		let isRedraw = false;
@@ -1420,6 +1370,7 @@ function WalkerOne(){
 		if( cntrls.eHPosBox.value !== cntrls.oldHPosBox ){
 			cntrls.eHPos.value = cntrls.eHPosBox.value;
 		}
+/*
 		if( cntrls.RotXY.old !== cntrls.RotXY.value ){
 			cntrls.RotXYTxt.value = cntrls.RotXY.value;
 		}else
@@ -1464,10 +1415,12 @@ function WalkerOne(){
 			isRedraw = true;
 			cntrls.Dist.value = cntrls.DistTxt.value;
 		}
+*/
 		
 		// H軸位置設定
 		hPos = cntrls.eHPos.value*(0.01);
 		
+/*
 		// 真４Ｄオブジェクトの更新：非移動時のみ
 		if( ( cntrls.RotXY.old !== cntrls.RotXY.value )||
 			( cntrls.RotYZ.old !== cntrls.RotYZ.value )||
@@ -1478,8 +1431,10 @@ function WalkerOne(){
 		){
 			cntrls.oldHPos = (-100);
 		}
+*/
 		// 現在値記録
 		cntrls.oldHPosBox = cntrls.eHPosBox.value;
+/*
 		cntrls.RotXY.old = cntrls.RotXY.value;
 		cntrls.RotYZ.old = cntrls.RotYZ.value;
 		cntrls.RotYH.old = cntrls.RotYH.value;
@@ -1497,6 +1452,7 @@ function WalkerOne(){
 		if(( moveXZ.vel != 0 )||( cntrls.oldHPos != cntrls.eHPos.value )){
 			isRedraw = true;
 		}
+*/
 		// 現hPos値の記録
 		cntrls.oldHPos = cntrls.eHPos.value;
 		
@@ -1510,7 +1466,6 @@ function WalkerOne(){
 		
 		gl.enable(gl.CULL_FACE);
 		
-/**/
 		// 地面
 		(function(){
 			"use strict";
@@ -1540,26 +1495,6 @@ function WalkerOne(){
 			gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, EquinoxFloor.Ibo );
 			gl.drawElements( gl.TRIANGLES, EquinoxFloor.Data.i.length, gl.UNSIGNED_SHORT, 0 );
 		}());
-/**
-		
-		// 注視点位置表示
-		(function(){
-			"use strict";
-			var rotate = [];
-			Roller.setPos( [ views.lookAt[0], views.lookAt[1]+Roller.height-views.height, views.lookAt[2] ] );
-			rotate = Roller.getRotate();
-			// Rollerの回転
-			rotate[0] += moveXZ.vel;
-			if( rotate[0] >= Math.PI*2 ){
-				rotate[0] -= Math.PI*2;
-			}
-			// Roller方向変更の遅延反映
-			rotate[1] = ( rotate[1]*7 + Math.PI*2 - moveXZ.rot )/8;
-			Roller.setRotate( rotate );
-			Roller.prepDraw( triangleShader, vepMatrix, [ 0, 0, 0, light00.position, views.eyePosition, light00.ambient ] );
-			Roller.draw( triangleShader );
-		}());
-/**/
 		
 		// LegBrain
 		let isReset = false;
@@ -1577,12 +1512,7 @@ function WalkerOne(){
 		if(( keyStatus[8] )&&( !keyBackup[8] )){	// 'r'
 			isReset = true;
 		}
-		if(( keyStatus[2] )&&( !keyBackup[2] )){	// rotate
-			LegBrain.rcvCmd( CmdMvTurnL, CmdListOut );
-		}
-		if(( keyStatus[3] )&&( !keyBackup[3] )){	// rotate
-			LegBrain.rcvCmd( CmdMvTurnR, CmdListOut );
-		}
+		
 		// 視野からはみ出たときの処理
 		const wkPos = Walker.getPos();
 		const ViewOffset = 2.6;
@@ -1596,15 +1526,6 @@ function WalkerOne(){
 		keyBackup = keyStatus.concat();
 		LegBrain.checkCmdList();
 		
-		let rotWalker = [
-			cntrls.RotXY.value/100,
-			cntrls.RotYZ.value/100,
-			cntrls.RotYH.value/100,
-			cntrls.RotZH.value/100,
-			cntrls.RotXZ.value/100,
-			cntrls.RotXH.value/100
-		];
-		
 		if( Walker.isReset( isReset ) ){
 			Walker.resetPos();
 			views.eyePosition = [ 0,  SIGHT_HEIGHT, SIGHT_LENGTH*2 ];
@@ -1612,19 +1533,11 @@ function WalkerOne(){
 			return;
 		}
 		
-		rotWalker[0] = Walker.getRotate()[0];		// XY回転の制御
-		rotWalker[1] = Walker.getRotate()[1];		// YZ回転の制御
-		rotWalker[2] = Walker.getRotate()[2];		// YH回転の制御
-		//rotWalker[3] = Walker.getRotate()[3];		// ZH回転の制御
-		//rotWalker[4] = Walker.getRotate()[4];		// XZ回転の制御
-		rotWalker[5] = Walker.getRotate()[5];		// XZ回転の制御
-		Walker.setRotate( rotWalker );
 		if(( cntrls.wkrPos[0] !== Walker.pos[0] )||( cntrls.wkrPos[1] !== Walker.pos[1] )||( cntrls.wkrPos[2] !== Walker.pos[2] )||( cntrls.wkrPos[3] !== Walker.pos[3] )){
 			isRedraw = true;
 			cntrls.wkrPos = Walker.pos.concat();
 		}
-//		Walker.walk( cntrls.Dist.value/100 );	// APIは仮
-		Walker.walk( 0.01 );	// APIは仮
+		Walker.walk( VELOCITY );
 		if( isRedraw ){
 			// 八胞体切断体の作成
 			TriBuffer.initialize( triangleShader );
